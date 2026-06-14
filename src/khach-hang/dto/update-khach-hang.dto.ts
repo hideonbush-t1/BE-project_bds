@@ -30,6 +30,14 @@ export class UpdateKhachHangDto {
   soDienThoai?: string;
 
   @IsOptional()
+  @IsString()
+  nhanVienId?: string;
+
+  @IsOptional()
+  @IsString()
+  soCMND?: string;
+
+  @IsOptional()
   @IsEmail()
   email?: string;
 }

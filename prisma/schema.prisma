@@ -8,22 +8,23 @@ datasource db {
 }
 
 model NhanVien {
-  id          String     @id @map("MaNV") @db.VarChar(5)
-  matKhau     String     @map("MatKhau") @db.VarChar(255)
-  hoTen       String     @map("TenNV") @db.VarChar(45)
-  diaChi      String     @map("DiaChi") @db.VarChar(100)
-  gioiTinh    String     @map("GioiTinh") @db.VarChar(10)
-  ngaySinh    DateTime   @map("NgaySinh") @db.Date
-  chucVu      String     @map("ChucVu") @db.VarChar(50)
-  soDienThoai String     @map("SoDienThoai") @db.VarChar(12)
-  email       String     @map("Email") @db.VarChar(50)
-  admin       String     @map("Admin") @db.VarChar(20)
-  tenDangNhap String?    @map("TenDangNhap") @db.VarChar(50)
-  anhDaiDien  String?    @map("AnhDaiDien") @db.VarChar(255)
-  isDeleted   Boolean?   @default(false) @map("IsDeleted")
-  ngayTao     DateTime?  @default(now()) @map("NgayTao") @db.DateTime(0)
-  giaoDiches  GiaoDich[] @relation("NhanVienGiaoDich")
-  thongBaos   ThongBao[] @relation("NhanVienThongBao")
+  id          String      @id @map("MaNV") @db.VarChar(5)
+  matKhau     String      @map("MatKhau") @db.VarChar(255)
+  hoTen       String      @map("TenNV") @db.VarChar(45)
+  diaChi      String      @map("DiaChi") @db.VarChar(100)
+  gioiTinh    String      @map("GioiTinh") @db.VarChar(10)
+  ngaySinh    DateTime    @map("NgaySinh") @db.Date
+  chucVu      String      @map("ChucVu") @db.VarChar(50)
+  soDienThoai String      @map("SoDienThoai") @db.VarChar(12)
+  email       String      @map("Email") @db.VarChar(50)
+  admin       String      @map("Admin") @db.VarChar(20)
+  tenDangNhap String?     @map("TenDangNhap") @db.VarChar(50)
+  anhDaiDien  String?     @map("AnhDaiDien") @db.VarChar(255)
+  isDeleted   Boolean?    @default(false) @map("IsDeleted")
+  ngayTao     DateTime?   @default(now()) @map("NgayTao") @db.DateTime(0)
+  giaoDiches  GiaoDich[]  @relation("NhanVienGiaoDich")
+  khachhang   KhachHang[]
+  thongBaos   ThongBao[]  @relation("NhanVienThongBao")
 
   @@map("nhanvien")
 }
@@ -39,12 +40,14 @@ model KhachHang {
   email            String?      @map("Email") @db.VarChar(50)
   nhanVienId       String?      @map("MaNVQL") @db.VarChar(5)
   isDeleted        Boolean?     @default(false) @map("IsDeleted")
-  ngayTao          DateTime?    @default(now()) @map("NgayTao") @db.DateTime(0)
+  ngayTao          DateTime?    @map("NgayTao") @db.DateTime(0)
   soCMND           String?      @map("SoCMND") @db.VarChar(20)
   batDongSans      BatDongSan[]
   benMuaGiaoDiches GiaoDich[]   @relation("BenMua")
+  nhanvien         NhanVien?    @relation(fields: [nhanVienId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "khachhang_ibfk_1")
   nhuCaus          NhuCau[]
 
+  @@index([nhanVienId], map: "MaNVQL")
   @@map("khachhang")
 }
 
@@ -58,9 +61,9 @@ model NhuCau {
   dienTichMax Float?    @map("DienTichMax") @db.Float
   ghiChu      String?   @map("GhiChu") @db.VarChar(255)
   isDeleted   Boolean?  @default(false) @map("IsDeleted")
-  khachHang   KhachHang @relation(fields: [khachHangId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "FK_NC_KH")
+  khachHang   KhachHang @relation(fields: [khachHangId], references: [id], onUpdate: Restrict, map: "FK_NC_KH")
 
-  @@index([khachHangId], map: "FK_NC_KH")
+  @@index([khachHangId], map: "MaKH")
   @@map("nhucau")
 }
 
@@ -75,17 +78,17 @@ model BatDongSan {
   giaTien     Decimal      @map("GiaTien") @db.Decimal(15, 2)
   tinhTrang   String       @map("TinhTrang") @db.VarChar(50)
   isDeleted   Boolean?     @default(false) @map("IsDeleted")
-  ngayTao     DateTime?    @default(now()) @map("NgayTao") @db.DateTime(0)
-  ngayCapNhat DateTime?    @default(now()) @updatedAt @map("NgayCapNhat") @db.DateTime(0)
+  ngayTao     DateTime?    @map("NgayTao") @db.DateTime(0)
+  ngayCapNhat DateTime?    @updatedAt @map("NgayCapNhat") @db.DateTime(0)
   viTri       String?      @map("ViTri") @db.VarChar(100)
   huong       String?      @map("Huong") @db.VarChar(50)
-  ghiChu      String?      @map("GhiChu") @db.VarChar(1000)
-  khachHang   KhachHang    @relation(fields: [khachHangId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "FK_BDS_KH")
+  ghiChu      String?      @map("GhiChu") @db.LongText
+  khachHang   KhachHang    @relation(fields: [khachHangId], references: [id], onUpdate: Restrict, map: "FK_BDS_KH")
   chiTiet     ChiTietBDS?
   giaoDiches  GiaoDich[]
   hinhAnhs    HinhAnhBDS[]
 
-  @@index([khachHangId], map: "FK_BDS_KH")
+  @@index([khachHangId], map: "MaKH")
   @@map("batdongsan")
 }
 
@@ -99,21 +102,21 @@ model ChiTietBDS {
   matTien    Float?     @map("MatTien") @db.Float
   duongVao   Float?     @map("DuongVao") @db.Float
   phapLy     String?    @map("PhapLy") @db.VarChar(100)
-  moTa       String?    @map("MoTa") @db.VarChar(1000)
-  ghiChu     String?    @map("GhiChu") @db.VarChar(1000)
-  batDongSan BatDongSan @relation(fields: [id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "FK_CTBDS_BDS")
+  moTa       String?    @map("MoTa") @db.LongText
+  ghiChu     String?    @map("GhiChu") @db.LongText
+  batDongSan BatDongSan @relation(fields: [id], references: [id], onUpdate: Restrict, map: "FK_CTBDS_BDS")
 
   @@map("chitietbds")
 }
 
 model HinhAnhBDS {
-  id           Int        @id @default(autoincrement()) @map("MaHinhAnh")
+  id           Int        @id @map("MaHinhAnh")
   batDongSanId String     @map("MaBDS") @db.VarChar(20)
   duongDan     String     @map("DuongDan") @db.VarChar(255)
   anhDaiDien   Boolean?   @default(false) @map("AnhDaiDien")
-  batDongSan   BatDongSan @relation(fields: [batDongSanId], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "FK_HINHANH_BDS")
+  batDongSan   BatDongSan @relation(fields: [batDongSanId], references: [id], onUpdate: Restrict, map: "FK_HINHANH_BDS")
 
-  @@index([batDongSanId], map: "FK_HINHANH_BDS")
+  @@index([batDongSanId], map: "MaBDS")
   @@map("hinhanhbds")
 }
 
@@ -126,37 +129,36 @@ model GiaoDich {
   soTien          Decimal    @map("SoTien") @db.Decimal(15, 2)
   ngayGD          DateTime   @map("NgayGD") @db.Date
   tyLeHoaHong     Float      @map("TyLeHoaHong") @db.Float
-  moTaGD          String?    @map("MoTaGD") @db.VarChar(1000)
+  moTaGD          String?    @map("MoTaGD") @db.LongText
   tinhTrang       String     @map("TinhTrang") @db.VarChar(50)
   isDeleted       Boolean?   @default(false) @map("IsDeleted")
-  ngayTao         DateTime?  @default(now()) @map("NgayTao") @db.DateTime(0)
-  batDongSan      BatDongSan @relation(fields: [batDongSanId], references: [id], onUpdate: Restrict, map: "FK_GD_BDS")
+  ngayTao         DateTime?  @map("NgayTao") @db.DateTime(0)
   benMuaKhachHang KhachHang  @relation("BenMua", fields: [benMua], references: [id], onUpdate: Restrict, map: "FK_GD_KH")
+  batDongSan      BatDongSan @relation(fields: [batDongSanId], references: [id], onUpdate: Restrict, map: "FK_GD_BDS")
   nhanVien        NhanVien   @relation("NhanVienGiaoDich", fields: [nhanVienId], references: [id], onUpdate: Restrict, map: "FK_GD_NV")
 
-  @@index([batDongSanId], map: "FK_GD_BDS")
-  @@index([benMua], map: "FK_GD_KH")
-  @@index([nhanVienId], map: "FK_GD_NV")
+  @@index([benMua], map: "BenMua")
+  @@index([batDongSanId], map: "MaBDS")
+  @@index([nhanVienId], map: "MaNVGD")
   @@map("giaodich")
 }
 
 model ThongBao {
   id         Int       @id @default(autoincrement()) @map("MaTB")
   tieuDe     String    @map("TenTB") @db.VarChar(255)
-  noiDung    String    @map("NoiDungTB") @db.VarChar(1000)
+  noiDung    String    @map("NoiDungTB") @db.LongText
   ngayDang   DateTime  @map("Ngay") @db.Date
   nhanVienId String?   @map("MaNV") @db.VarChar(5)
   isDeleted  Boolean?  @default(false) @map("IsDeleted")
   nhanVien   NhanVien? @relation("NhanVienThongBao", fields: [nhanVienId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_TB_NV")
 
-  @@index([nhanVienId], map: "FK_TB_NV")
+  @@index([nhanVienId], map: "MaNV")
   @@map("thongbao")
 }
-model HoSoBieuMau {
-  maHoSo   Int     @id @default(autoincrement())
-  tenHoSo  String  @db.VarChar(150)
-  noiDung  String? @db.LongText      
-  duongDan String  @db.VarChar(255)
 
-  @@map("HOSOBIEUMAU")
+model hosobieumau {
+  MaHoSo   Int     @id @default(autoincrement())
+  TenHoSo  String  @db.VarChar(150)
+  NoiDung  String? @db.LongText
+  DuongDan String  @db.VarChar(255)
 }

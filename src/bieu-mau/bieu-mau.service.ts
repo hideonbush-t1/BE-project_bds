@@ -7,28 +7,28 @@ import { CreateBieuMauDto } from './dto/create-bieu-mau.dto';
 export class BieuMauService extends PrismaCrudService {
   constructor(private readonly prisma: PrismaService) {
     super();
-    this.whereKey = 'maHoSo'; 
+    this.whereKey = 'MaHoSo'; 
   }
 
   protected get delegate() {
-    return this.prisma.hoSoBieuMau; 
+    return this.prisma.hosobieumau;
   }
 
   // 1. Hàm thêm mới biểu mẫu vào Database
   async createBieuMau(data: CreateBieuMauDto, fileName: string) {
-    return this.prisma.hoSoBieuMau.create({
+    return this.prisma.hosobieumau.create({
       data: {
-        tenHoSo: data.tenHoSo,
-        noiDung: data.noiDung,
-        duongDan: fileName, // Lưu tên file vật lý vào DB
+        TenHoSo: data.tenHoSo,
+        NoiDung: data.noiDung,
+        DuongDan: fileName, // Lưu tên file vật lý vào DB
       },
     });
   }
 
   // 2. Hàm lấy thông tin để tải file
   async getFileForDownload(maHoSo: number) {
-    const bieuMau = await this.prisma.hoSoBieuMau.findUnique({
-      where: { maHoSo },
+    const bieuMau = await this.prisma.hosobieumau.findUnique({
+      where: { MaHoSo: maHoSo },
     });
 
     if (!bieuMau) {
