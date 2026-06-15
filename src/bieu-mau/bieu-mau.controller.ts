@@ -74,14 +74,14 @@ export class BieuMauController {
   ): Promise<StreamableFile> {
     
     const bieuMau = await this.service.getFileForDownload(id);
-    const filePath = join(uploadDir, bieuMau.duongDan);
+    const filePath = join(uploadDir, bieuMau.DuongDan);
 
     if (!existsSync(filePath)) {
       throw new NotFoundException('File vật lý không tồn tại trên server');
     }
 
-    const fileExtension = extname(bieuMau.duongDan) || '.pdf';
-    const safeFileName = encodeURIComponent(bieuMau.tenHoSo) + fileExtension;
+    const fileExtension = extname(bieuMau.DuongDan) || '.pdf';
+    const safeFileName = encodeURIComponent(bieuMau.TenHoSo) + fileExtension;
 
     const fileStream = createReadStream(filePath);
 
