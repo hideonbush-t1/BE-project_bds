@@ -6,8 +6,9 @@ import { BatDongSanService } from './bat-dong-san.service';
 import { CreateBatDongSanDto } from './dto/create-bat-dong-san.dto';
 import { UpdateBatDongSanDto } from './dto/update-bat-dong-san.dto';
 
+
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'employee')
+ @Roles('admin', 'employee')
 @Controller('bat-dong-san')
 export class BatDongSanController {
   constructor(private readonly service: BatDongSanService) {}
