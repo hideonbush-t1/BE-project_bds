@@ -16,7 +16,8 @@ export class KhachHangService extends PrismaCrudService {
   }
 
   /**
-   * SRS 5.5.1: Xem danh sách khách hàng (Có bộ lọc loại KH và tìm kiếm)
+   * SRS 5.5.1: Xem danh sách khách hàng 
+   * Đã cập nhật tìm kiếm theo Mã KH (id), Tên và SĐT
    */
   override async findAll(query?: { loaiKH?: string; search?: string }) {
     return await this.prisma.khachHang.findMany({
@@ -26,8 +27,9 @@ export class KhachHangService extends PrismaCrudService {
         ...(query?.search
           ? {
               OR: [
-                { hoTen: { contains: query.search } },
-                { soDienThoai: { contains: query.search } },
+                { id: { contains: query.search } },           // Tìm theo Mã KH
+                { hoTen: { contains: query.search } },        // Tìm theo Tên
+                { soDienThoai: { contains: query.search } },  // Tìm theo SĐT
               ],
             }
           : {}),
