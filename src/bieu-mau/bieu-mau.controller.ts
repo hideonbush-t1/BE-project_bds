@@ -1,5 +1,5 @@
 import { 
-  Controller, Get, Param, Post, Res, StreamableFile, 
+  Controller, Get, Param, Post, Res, StreamableFile, Delete,
   UseGuards, NotFoundException, ParseIntPipe, Body, UseInterceptors, UploadedFile, BadRequestException 
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -12,6 +12,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 import { BieuMauService } from './bieu-mau.service';
 import { CreateBieuMauDto } from './dto/create-bieu-mau.dto';
+import { memoryStorage } from 'multer';
 
 // Đảm bảo thư mục upload tồn tại
 const uploadDir = join(process.cwd(), 'uploads', 'bieu-mau');
@@ -41,15 +42,7 @@ export class BieuMauController {
   @Post()
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: diskStorage({
-        destination: uploadDir,
-        filename: (req, file, cb) => {
-          // Tạo tên file duy nhất: timestamp + chuỗi ngẫu nhiên + đuôi file gốc
-          const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9);
-          const ext = extname(file.originalname);
-          cb(null, `bieumau-${uniqueSuffix}${ext}`);
-        },
-      }),
+      storage: memoryStorage(), // <-- Ép buộc lưu tạm vào RAM để lấy file.buffer
     }),
   )
   async create(
@@ -60,8 +53,7 @@ export class BieuMauController {
       throw new BadRequestException('Vui lòng đính kèm file!');
     }
     
-    // Gọi service lưu vào DB với tên file vừa được multer tạo ra (file.filename)
-    return this.service.createBieuMau(dto, file.filename);
+    return this.service.createBieuMau(dto, file);
   }
 
   // ==========================================
@@ -91,5 +83,10 @@ export class BieuMauController {
     });
 
     return new StreamableFile(fileStream);
+  }
+  @Delete(':id')
+  remove(@Param('id', ParseIntPipe) id: number) {
+    // Gọi hàm remove từ PrismaCrudService có sẵn
+    return this.service.remove(id); 
   }
 }
