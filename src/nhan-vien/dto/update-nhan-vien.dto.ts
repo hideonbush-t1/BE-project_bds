@@ -26,7 +26,7 @@ export class UpdateNhanVienDto {
   @IsString()
   chucVu?: string;
 
+  @IsString()
   @IsOptional()
-  @IsBoolean()
-  isAdmin?: boolean;
+  role?: string;
 }

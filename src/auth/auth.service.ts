@@ -33,7 +33,7 @@ export class AuthService {
       sub: user.id,
       maNV: user.id,
       hoTen: user.hoTen,
-      isAdmin: user.admin === '1' || user.admin.toLowerCase() === 'true',
+      role: user.role, 
     };
 
     return {
@@ -47,7 +47,7 @@ export class AuthService {
         email: user.email,
         soDienThoai: user.soDienThoai,
         chucVu: user.chucVu,
-        isAdmin: user.admin === '1' || user.admin.toLowerCase() === 'true',
+        role: user.role, // Trả thẳng role về cho Frontend phân quyền
       },
     };
   }
@@ -61,7 +61,7 @@ export class AuthService {
         email: true,
         soDienThoai: true,
         chucVu: true,
-        admin: true,
+        role: true, // Lấy cột role từ Database thay vì admin
       },
     }).then((user) =>
       user
@@ -72,7 +72,7 @@ export class AuthService {
             email: user.email,
             soDienThoai: user.soDienThoai,
             chucVu: user.chucVu,
-            isAdmin: user.admin === '1' || user.admin.toLowerCase() === 'true',
+            role: user.role, // Trả thẳng role về
           }
         : null,
     );

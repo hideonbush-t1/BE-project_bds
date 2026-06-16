@@ -17,7 +17,7 @@ model NhanVien {
   chucVu      String     @map("ChucVu") @db.VarChar(50)
   soDienThoai String     @map("SoDienThoai") @db.VarChar(12)
   email       String     @map("Email") @db.VarChar(50)
-  admin       String     @map("Admin") @db.VarChar(20)
+  role        String     @map("Admin") @db.VarChar(20)
   tenDangNhap String?    @map("TenDangNhap") @db.VarChar(50)
   anhDaiDien  String?    @map("AnhDaiDien") @db.VarChar(255)
   isDeleted   Boolean?   @default(false) @map("IsDeleted")
