@@ -10,7 +10,7 @@ export abstract class PrismaCrudService {
   };
 
   findAll() {
-    return this.delegate.findMany({ orderBy: { id: 'desc' } });
+    return this.delegate.findMany({ orderBy: { [this.whereKey || 'id']: 'desc', } });
   }
 
   findOne(id: string | number) {
