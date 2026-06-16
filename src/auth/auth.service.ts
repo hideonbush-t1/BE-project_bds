@@ -15,42 +15,23 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  async login(loginDto: LoginDto) {
-    const user = await this.prisma.nhanVien.findUnique({
-      where: { id: loginDto.maNV },
-    });
-
-    if (!user) {
-      throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ');
-    }
-
-    const isPasswordValid = await bcrypt.compare(loginDto.matKhau, user.matKhau);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ');
-    }
-
-    const payload: JwtPayload = {
-      sub: user.id,
-      maNV: user.id,
-      hoTen: user.hoTen,
-      role: user.role, 
-    };
-
-    return {
-      accessToken: await this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_SECRET') ?? 'change-this-secret',
-      }),
-      user: {
-        id: user.id,
-        maNV: user.id,
-        hoTen: user.hoTen,
-        email: user.email,
-        soDienThoai: user.soDienThoai,
-        chucVu: user.chucVu,
-        role: user.role, // Trả thẳng role về cho Frontend phân quyền
-      },
-    };
+  // src/auth/auth.service.ts
+async login(loginDto: LoginDto) {
+  const user = await this.prisma.nhanVien.findUnique({
+    where: { id: loginDto.maNV },
+  });
+  
+  if (!user || !(await bcrypt.compare(loginDto.matKhau, user.matKhau))) {
+    throw new UnauthorizedException('Sai thông tin đăng nhập');
   }
+
+  return {
+    access_token: this.jwtService.sign({ 
+      sub: user.id, 
+      role: user.role // Đảm bảo trường này lấy từ DB
+    }),
+  };
+}
 
   profile(userId: string) {
     return this.prisma.nhanVien.findUnique({
