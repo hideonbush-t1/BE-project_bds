@@ -16,6 +16,8 @@ export class AuthService {
   ) {}
 
   // src/auth/auth.service.ts
+// src/auth/auth.service.ts
+
 async login(loginDto: LoginDto) {
   const user = await this.prisma.nhanVien.findUnique({
     where: { id: loginDto.maNV },
@@ -25,11 +27,24 @@ async login(loginDto: LoginDto) {
     throw new UnauthorizedException('Sai thông tin đăng nhập');
   }
 
-  return {
-    access_token: this.jwtService.sign({ 
+  // 1. Tạo token
+  const access_token = this.jwtService.sign({ 
       sub: user.id, 
-      role: user.role // Đảm bảo trường này lấy từ DB
-    }),
+      role: user.role 
+  });
+
+  // 2. Trả về token và thông tin người dùng
+  return {
+    access_token,
+    user: {
+      id: user.id,
+      maNV: user.id,
+      hoTen: user.hoTen,
+      email: user.email,
+      soDienThoai: user.soDienThoai,
+      chucVu: user.chucVu,
+      role: user.role,
+    }
   };
 }
 

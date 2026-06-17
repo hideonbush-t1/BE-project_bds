@@ -12,59 +12,39 @@ import { KhachHangService } from './khach-hang.service';
 export class KhachHangController {
   constructor(private readonly service: KhachHangService) {}
 
-  /**
-   * SRS 5.5.1: Xem danh sách khách hàng
-   */
   @Get()
   findAll(@Query() query: { loaiKH?: string; search?: string }) {
     return this.service.findAll(query);
   }
 
-  /**
-   * SRS 5.5.3: Xem thông tin chi tiết khách hàng
-   */
-  @Get(':MaKH')
-  findOne(@Param('MaKH') MaKH: string) {
-    return this.service.findOne(MaKH); // Gọi đến hàm findOne(string) đã override ở Service
+  // Chuyển đổi sang id để nhất quán với Database/Prisma
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.service.findOne(id);
   }
 
-  /**
-   * SRS 5.5.2: Thêm mới khách hàng
-   */
   @Post()
   create(@Body() dto: CreateKhachHangDto) {
     return this.service.create(dto);
   }
 
-  /**
-   * SRS 5.5.3: Chỉnh sửa thông tin khách hàng
-   */
-  @Patch(':MaKH')
-  update(@Param('MaKH') MaKH: string, @Body() dto: UpdateKhachHangDto) {
-    return this.service.update(MaKH, dto);
+  @Patch(':id')
+  update(@Param('id') id: string, @Body() dto: UpdateKhachHangDto) {
+    return this.service.update(id, dto);
   }
 
-  /**
-   * SRS 5.5.3: Xóa khách hàng
-   */
-  @Delete(':MaKH')
-  remove(@Param('MaKH') MaKH: string) {
-    return this.service.remove(MaKH); // Gọi đến hàm remove(string) đã override ở Service
+  @Delete(':id')
+  remove(@Param('id') id: string) {
+    return this.service.remove(id);
   }
 
-  /**
-   * SRS 5.5.4: Xem danh sách Nhu cầu của riêng một khách hàng
-   */
-  @Get(':MaKH/nhu-cau')
-  findNhuCauByKhachHang(@Param('MaKH') MaKH: string) {
-    return this.service.findNhuCauByKhachHang(MaKH);
+  @Get(':id/nhu-cau')
+  findNhuCauByKhachHang(@Param('id') id: string) {
+    return this.service.findNhuCauByKhachHang(id);
   }
 
-  /**
-   * SRS 5.5.5: Xem danh sách Bất động sản sở hữu của riêng một khách hàng
-   */
-  @Get(':MaKH/bat-dong-san')
-  findBatDongSanByKhachHang(@Param('MaKH') MaKH: string) {
-    return this.service.findBatDongSanByKhachHang(MaKH);
+  @Get(':id/bat-dong-san')
+  findBatDongSanByKhachHang(@Param('id') id: string) {
+    return this.service.findBatDongSanByKhachHang(id);
   }
 }

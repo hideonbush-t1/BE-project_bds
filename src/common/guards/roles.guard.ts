@@ -25,29 +25,30 @@ export class RolesGuard implements CanActivate {
 
     // Nếu không có user hoặc user không có role -> Chặn
     if (!user || !user.role) {
-      console.log('RolesGuard: User hoặc Role bị thiếu');
+      console.log('RolesGuard: User hoặc Role bị thiếu trong Token');
       return false;
     }
 
-    // 3. Chuẩn hóa để so sánh (không phân biệt hoa/thường)
-    const userRole = user.role.toLowerCase();
+    // 3. Chuẩn hóa giá trị role từ Token
+    // Ánh xạ giá trị '1' từ DB/JWT thành 'admin' để khớp với logic Controller
+    let userRole = String(user.role).toLowerCase();
+    if (userRole === '1') {
+      userRole = 'admin';
+    }
 
     // 4. Kiểm tra quyền
-    // Logic: Nếu role trong Controller nằm trong danh sách quyền của User thì cho qua
     const hasRole = requiredRoles.some((role) => {
       const r = role.toLowerCase();
       
-      // Nếu là admin, khớp chính xác với 'admin'
+      // So sánh quyền yêu cầu với role đã được chuẩn hóa
       if (r === 'admin') return userRole === 'admin';
-      
-      // Nếu là employee, khớp với 'employee' hoặc 'nhanvien'
       if (r === 'employee') return userRole === 'nhanvien' || userRole === 'employee';
       
       return r === userRole;
     });
 
     if (!hasRole) {
-      console.log(`RolesGuard: Từ chối truy cập. User role: ${userRole}, Yêu cầu: ${requiredRoles}`);
+      console.log(`RolesGuard: Từ chối truy cập. Role thực tế: ${userRole}, Yêu cầu: ${requiredRoles}`);
     }
 
     return hasRole;
