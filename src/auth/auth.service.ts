@@ -15,45 +15,55 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  // src/auth/auth.service.ts
-async login(loginDto: LoginDto) {
-  const user = await this.prisma.nhanVien.findUnique({
-    where: { id: loginDto.maNV },
-  });
-  
-  if (!user || !(await bcrypt.compare(loginDto.matKhau, user.matKhau))) {
-    throw new UnauthorizedException('Sai thông tin đăng nhập');
-  }
+  async login(loginDto: LoginDto) {
+    // Tìm nhân viên theo cột tenDangNhap thay vì id
+    const user = await this.prisma.nhanVien.findFirst({
+      where: { tenDangNhap: loginDto.maNV },
+    });
+    
+    if (!user || !(await bcrypt.compare(loginDto.matKhau, user.matKhau))) {
+      throw new UnauthorizedException('Sai thông tin đăng nhập');
+    }
 
-  return {
-    access_token: this.jwtService.sign({ 
-      sub: user.id, 
-      role: user.role // Đảm bảo trường này lấy từ DB
-    }),
-  };
-}
+    return {
+      // Trả về cả user để Frontend biết role mà điều hướng
+      user: {
+          id: user.id,
+          maNV: user.tenDangNhap,
+          hoTen: user.hoTen,
+          email: user.email,
+          chucVu: user.chucVu,
+          role: user.Role // SỬA Ở ĐÂY: Dùng chữ R viết hoa
+      },
+      access_token: this.jwtService.sign({ 
+        sub: user.id, 
+        role: user.Role // SỬA Ở ĐÂY: Dùng chữ R viết hoa
+      }),
+    };
+  }
 
   profile(userId: string) {
     return this.prisma.nhanVien.findUnique({
       where: { id: userId },
       select: {
         id: true,
+        tenDangNhap: true, 
         hoTen: true,
         email: true,
         soDienThoai: true,
         chucVu: true,
-        role: true, // Lấy cột role từ Database thay vì admin
+        Role: true, // SỬA Ở ĐÂY: Dùng chữ R viết hoa
       },
     }).then((user) =>
       user
         ? {
             id: user.id,
-            maNV: user.id,
+            maNV: user.tenDangNhap, 
             hoTen: user.hoTen,
             email: user.email,
             soDienThoai: user.soDienThoai,
             chucVu: user.chucVu,
-            role: user.role, // Trả thẳng role về
+            role: user.Role, // SỬA Ở ĐÂY: Dùng chữ R viết hoa
           }
         : null,
     );

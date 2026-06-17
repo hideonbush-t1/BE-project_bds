@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') { // Đã thêm tên 'jwt'
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') { 
   constructor(
     configService: ConfigService,
     private readonly prisma: PrismaService,
@@ -24,8 +24,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') { // Đã th�
       where: { id: payload.sub },
       select: {
         id: true,
+        tenDangNhap: true, // Bổ sung để lấy maNV chuẩn xác
         hoTen: true,
-        role: true, // Lấy role chính xác từ DB
+        Role: true, // SỬA Ở ĐÂY: Dùng chữ R viết hoa
       },
     });
 
@@ -37,9 +38,9 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') { // Đã th�
     // Trả về đúng cấu trúc mà RolesGuard mong đợi
     return {
       sub: user.id,
-      maNV: user.id,
+      maNV: user.tenDangNhap, // SỬA: lấy từ tenDangNhap thay vì id
       hoTen: user.hoTen,
-      role: user.role, // BẮT BUỘC phải có trường này
+      role: user.Role, // SỬA Ở ĐÂY: Dùng chữ R viết hoa
     };
   }
 }

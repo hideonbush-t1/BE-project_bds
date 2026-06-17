@@ -8,7 +8,11 @@ async function main() {
 
   await prisma.nhanVien.upsert({
     where: { id: 'admin' },
-    update: {},
+    update: {
+      matKhau: passwordHash,
+      Role: 'admin', // Đã sửa từ '1' thành 'admin'
+      tenDangNhap: 'admin'
+    },
     create: {
       id: 'admin',
       hoTen: 'Quản trị hệ thống',
@@ -19,7 +23,7 @@ async function main() {
       soDienThoai: '0900000000',
       email: 'admin@bds.local',
       matKhau: passwordHash,
-      role: '1',
+      Role: 'admin', // Đã sửa từ '1' thành 'admin'
       tenDangNhap: 'admin',
       anhDaiDien: null,
       isDeleted: false,
@@ -29,7 +33,11 @@ async function main() {
 
   await prisma.nhanVien.upsert({
     where: { id: 'nv001' },
-    update: {},
+    update: {
+      matKhau: passwordHash,
+      Role: 'employee', // Đã sửa từ '0' thành 'employee'
+      tenDangNhap: 'nv001'
+    },
     create: {
       id: 'nv001',
       hoTen: 'Nhân viên kinh doanh 001',
@@ -40,7 +48,7 @@ async function main() {
       soDienThoai: '0911111111',
       email: 'nv001@bds.local',
       matKhau: passwordHash,
-      role: '0',
+      Role: 'employee', // Đã sửa từ '0' thành 'employee'
       tenDangNhap: 'nv001',
       anhDaiDien: null,
       isDeleted: false,

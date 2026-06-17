@@ -27,7 +27,7 @@ export class NhanVienService extends PrismaCrudService {
         chucVu: data.chucVu,
         soDienThoai: data.soDienThoai ?? '',
         email: data.email,
-        role: data.role ? '1' : '0',
+        Role: data.role ? 'admin' : 'employee', // SỬA: Chữ R viết hoa và đổi giá trị
         tenDangNhap: data.maNV,
         anhDaiDien: null,
         isDeleted: false,
@@ -44,7 +44,9 @@ export class NhanVienService extends PrismaCrudService {
       ...(data.email ? { email: data.email } : {}),
       ...(data.soDienThoai ? { soDienThoai: data.soDienThoai } : {}),
       ...(data.chucVu ? { chucVu: data.chucVu } : {}),
-      ...(typeof data.role === 'boolean' ? { role: data.role ? '1' : '0' } : {}),
+      // SỬA: Chữ R viết hoa và xử lý linh hoạt cả boolean lẫn string
+      ...(typeof data.role === 'boolean' ? { Role: data.role ? 'admin' : 'employee' } : {}),
+      ...(typeof data.role === 'string' ? { Role: data.role } : {}),
     };
     if (data.matKhau) {
       payload.matKhau = await bcrypt.hash(data.matKhau, 10);
