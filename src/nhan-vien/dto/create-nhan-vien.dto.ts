@@ -23,5 +23,5 @@ export class CreateNhanVienDto {
 
   @IsString()
   @IsOptional()
-  role?: string;
+  Role?: string;
 }

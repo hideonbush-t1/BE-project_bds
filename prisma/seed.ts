@@ -6,9 +6,12 @@ const prisma = new PrismaClient();
 async function main() {
   const passwordHash = await bcrypt.hash('123456', 10);
 
+  // Seed Admin
   await prisma.nhanVien.upsert({
     where: { id: 'admin' },
-    update: {},
+    update: {
+      Role: 'admin', // Cập nhật role nếu đã tồn tại
+    },
     create: {
       id: 'admin',
       hoTen: 'Quản trị hệ thống',
@@ -19,7 +22,7 @@ async function main() {
       soDienThoai: '0900000000',
       email: 'admin@bds.local',
       matKhau: passwordHash,
-      role: '1',
+      Role: 'admin', // Sử dụng Role (Viết hoa chữ R)
       tenDangNhap: 'admin',
       anhDaiDien: null,
       isDeleted: false,
@@ -27,9 +30,12 @@ async function main() {
     },
   });
 
+  // Seed Nhân viên
   await prisma.nhanVien.upsert({
     where: { id: 'nv001' },
-    update: {},
+    update: {
+      Role: 'employee', // Cập nhật role nếu đã tồn tại
+    },
     create: {
       id: 'nv001',
       hoTen: 'Nhân viên kinh doanh 001',
@@ -40,13 +46,15 @@ async function main() {
       soDienThoai: '0911111111',
       email: 'nv001@bds.local',
       matKhau: passwordHash,
-      role: '0',
+      Role: 'employee', // Sử dụng Role (Viết hoa chữ R)
       tenDangNhap: 'nv001',
       anhDaiDien: null,
       isDeleted: false,
       ngayTao: new Date(),
     },
   });
+
+  console.log('Seed data successfully!');
 }
 
 main()

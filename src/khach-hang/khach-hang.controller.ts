@@ -1,4 +1,14 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards } from '@nestjs/common';
+import { 
+  Body, 
+  Controller, 
+  Delete, 
+  Get, 
+  Param, 
+  Patch, 
+  Post, 
+  Query, 
+  UseGuards 
+} from '@nestjs/common';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -7,6 +17,7 @@ import { UpdateKhachHangDto } from './dto/update-khach-hang.dto';
 import { KhachHangService } from './khach-hang.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
+// Đảm bảo @Roles bao gồm cả 'admin' và 'employee' để cả 2 đều có quyền truy cập
 @Roles('admin', 'employee')
 @Controller('khach-hang')
 export class KhachHangController {
@@ -17,7 +28,6 @@ export class KhachHangController {
     return this.service.findAll(query);
   }
 
-  // Chuyển đổi sang id để nhất quán với Database/Prisma
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.service.findOne(id);
