@@ -28,5 +28,5 @@ export class UpdateNhanVienDto {
 
   @IsString()
   @IsOptional()
-  role?: string;
+  Role?: string;
 }

@@ -18,11 +18,11 @@ export class BieuMauController {
   // ==========================================
   // 1. LẤY DANH SÁCH BIỂU MẪU
   // ==========================================
-  @Get() // Route này sẽ là: GET /ho-so-bieu-mau
-  @Roles('admin')
-  findAll() {
-    return this.service.findAll();
-  }
+  @Get()
+@Roles('admin', 'employee') // Thêm 'employee' vào đây
+findAll() {
+  return this.service.findAll();
+}
 
   // ==========================================
   // 2. LẤY CHI TIẾT 1 BIỂU MẪU
