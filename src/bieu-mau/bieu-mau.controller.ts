@@ -1,5 +1,5 @@
 import { 
-  Controller, Get, Param, Post, Delete,
+  Controller, Get, Param, Post, Delete, Put,
   UseGuards, ParseIntPipe, Body, UseInterceptors, UploadedFile, BadRequestException 
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
@@ -61,5 +61,22 @@ findAll() {
   @Roles('admin')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id); 
+  }
+  // ==========================================
+  // 5. CẬP NHẬT BIỂU MẪU (SỬA)
+  // ==========================================
+  @Put(':id')
+  @Roles('admin')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: memoryStorage(),
+    }),
+  )
+  async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: CreateBieuMauDto, // Tái sử dụng DTO hoặc tạo UpdateBieuMauDto
+    @UploadedFile() file?: Express.Multer.File, // File có thể undefined nếu user không chọn file mới
+  ) {
+    return this.service.updateBieuMau(id, dto, file);
   }
 }

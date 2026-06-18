@@ -88,4 +88,35 @@ export class BieuMauService extends PrismaCrudService {
 
     return bieuMau;
   }
+  async updateBieuMau(id: number, data: CreateBieuMauDto, file?: Express.Multer.File) {
+    // 1. Kiểm tra biểu mẫu có tồn tại trong database không
+    const existingBieuMau = await this.prisma.hosobieumau.findUnique({
+      where: { MaHoSo: id },
+    });
+
+    if (!existingBieuMau) {
+      throw new NotFoundException(`Không tìm thấy hồ sơ biểu mẫu với ID: ${id}`);
+    }
+
+    // 2. Xử lý đường dẫn file
+    let newCloudUrl = existingBieuMau.DuongDan; // Mặc định giữ nguyên link cũ
+    
+    // Nếu Client có gửi file mới lên, tiến hành upload và ghi đè link
+    if (file) {
+      newCloudUrl = await this.uploadToCloudinary(file);
+      
+      // (Tùy chọn) Tại đây bạn có thể gọi API của Cloudinary để xóa file cũ 
+      // dựa trên public_id để tiết kiệm dung lượng cloud.
+    }
+
+    // 3. Cập nhật dữ liệu mới vào Database
+    return this.prisma.hosobieumau.update({
+      where: { MaHoSo: id },
+      data: {
+        TenHoSo: data.tenHoSo !== undefined ? data.tenHoSo : existingBieuMau.TenHoSo,
+        NoiDung: data.noiDung !== undefined ? data.noiDung : existingBieuMau.NoiDung,
+        DuongDan: newCloudUrl, 
+      },
+    });
+  }
 }
