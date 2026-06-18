@@ -6,7 +6,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') { // Đã thêm tên 'jwt'
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
   constructor(
     configService: ConfigService,
     private readonly prisma: PrismaService,
@@ -19,27 +19,29 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') { // Đã th�
   }
 
   async validate(payload: JwtPayload) {
-    // Tìm user từ database để lấy role mới nhất
+    // 1. Tìm user từ database để lấy thông tin mới nhất
     const user = await this.prisma.nhanVien.findUnique({
       where: { id: payload.sub },
       select: {
         id: true,
         hoTen: true,
-        role: true, // Lấy role chính xác từ DB
+        Role: true, // Lấy role chính xác từ DB
       },
     });
 
-    // Nếu không tìm thấy trong DB, vẫn trả về payload gốc từ token để không bị chặn oan
+    // 2. Nếu user không tồn tại, trả về payload gốc (để giữ logic bảo mật)
     if (!user) {
       return payload;
     }
 
-    // Trả về đúng cấu trúc mà RolesGuard mong đợi
+    // 3. Trả về đúng cấu trúc để gắn vào request.user
+    // Các Controller sau này sẽ truy cập được thông qua: request.user.Role, request.user.hoTen...
     return {
+      id: user.id,         // Dùng cho sub
       sub: user.id,
-      maNV: user.id,
+      maNV: user.id,      // Giả định dùng ID làm mã nhân viên
       hoTen: user.hoTen,
-      role: user.role, // BẮT BUỘC phải có trường này
+      Role: user.Role,    // Giá trị 'admin' hoặc 'employee' từ DB
     };
   }
 }

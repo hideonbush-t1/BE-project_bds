@@ -15,6 +15,28 @@ export class BatDongSanService extends PrismaCrudService {
     return this.prisma.batDongSan;
   }
 
+  findAll() {
+    return this.prisma.batDongSan.findMany({
+      where: {
+        isDeleted: false, 
+      },
+      select: {
+        id: true,
+        khachHangId: true,
+        tieuDe: true,
+        loaiBDS: true,
+        diaChi: true,
+        dienTich: true,
+        giaTien: true,
+        tinhTrang: true,
+        ngayTao: true,
+      },
+      orderBy: {
+        ngayTao: 'desc', 
+      },
+    });
+  }
+
   create(data: CreateBatDongSanDto) {
     const { huong, moTa, ...batDongSanData } = data;
     const propertyId = `BDS${Date.now()}`.slice(0, 20);

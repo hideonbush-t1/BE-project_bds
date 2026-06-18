@@ -15,26 +15,44 @@ export class AuthService {
     private readonly configService: ConfigService,
   ) {}
 
-  // src/auth/auth.service.ts
-async login(loginDto: LoginDto) {
-  const user = await this.prisma.nhanVien.findUnique({
-    where: { id: loginDto.maNV },
-  });
-  
-  if (!user || !(await bcrypt.compare(loginDto.matKhau, user.matKhau))) {
-    throw new UnauthorizedException('Sai thông tin đăng nhập');
+  async login(loginDto: LoginDto) {
+    // Tìm nhân viên trong DB
+    const user = await this.prisma.nhanVien.findUnique({
+      where: { id: loginDto.maNV },
+    });
+    
+    // Kiểm tra mật khẩu
+    if (!user || !(await bcrypt.compare(loginDto.matKhau, user.matKhau))) {
+      throw new UnauthorizedException('Sai thông tin đăng nhập');
+    }
+
+    // 1. Tạo token: Truyền đầy đủ 4 thuộc tính theo interface JwtPayload
+    const payload: JwtPayload = { 
+      sub: user.id, 
+      maNV: user.id, // Giả định maNV trùng với id, nếu có cột riêng hãy sửa thành user.maNV
+      hoTen: user.hoTen,
+      Role: user.Role 
+    };
+    
+    const access_token = this.jwtService.sign(payload);
+
+    // 2. Trả về token và thông tin người dùng
+    return {
+      access_token,
+      user: {
+        id: user.id,
+        maNV: user.id,
+        hoTen: user.hoTen,
+        email: user.email,
+        soDienThoai: user.soDienThoai,
+        chucVu: user.chucVu,
+        role: user.Role, // Trả thẳng giá trị từ DB ('admin' hoặc 'employee')
+      }
+    };
   }
 
-  return {
-    access_token: this.jwtService.sign({ 
-      sub: user.id, 
-      role: user.role // Đảm bảo trường này lấy từ DB
-    }),
-  };
-}
-
-  profile(userId: string) {
-    return this.prisma.nhanVien.findUnique({
+  async profile(userId: string) {
+    const user = await this.prisma.nhanVien.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -42,25 +60,27 @@ async login(loginDto: LoginDto) {
         email: true,
         soDienThoai: true,
         chucVu: true,
-        role: true, // Lấy cột role từ Database thay vì admin
+        Role: true, 
       },
-    }).then((user) =>
-      user
-        ? {
-            id: user.id,
-            maNV: user.id,
-            hoTen: user.hoTen,
-            email: user.email,
-            soDienThoai: user.soDienThoai,
-            chucVu: user.chucVu,
-            role: user.role, // Trả thẳng role về
-          }
-        : null,
-    );
+    });
+
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      maNV: user.id,
+      hoTen: user.hoTen,
+      email: user.email,
+      soDienThoai: user.soDienThoai,
+      chucVu: user.chucVu,
+      role: user.Role, 
+    };
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
-    const user = await this.prisma.nhanVien.findUnique({ where: { id: userId } });
+    const user = await this.prisma.nhanVien.findUnique({ 
+      where: { id: userId } 
+    });
 
     if (!user) {
       throw new UnauthorizedException('Người dùng không tồn tại');
