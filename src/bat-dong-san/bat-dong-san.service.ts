@@ -1,4 +1,4 @@
-import { Injectable ,NotFoundException} from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaCrudService } from '../common/crud/prisma-crud.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -57,6 +57,9 @@ export class BatDongSanService extends PrismaCrudService {
     });
   }
 
+  // ==========================================
+  // LẤY DANH SÁCH BẤT ĐỘNG SẢN
+  // ==========================================
   findAll() {
     return this.prisma.batDongSan.findMany({
       where: { isDeleted: false },
@@ -70,6 +73,9 @@ export class BatDongSanService extends PrismaCrudService {
         giaTien: true,
         tinhTrang: true,
         ngayTao: true,
+        viTri: true,
+        huong: true,
+        ghiChu: true,
         hinhAnhs: {
           select: {
             id: true,
@@ -82,15 +88,34 @@ export class BatDongSanService extends PrismaCrudService {
     });
   }
 
+  // ==========================================
+  // LẤY CHI TIẾT 1 BẤT ĐỘNG SẢN
+  // ==========================================
+  async findOne(id: string) {
+const bds = await this.prisma.batDongSan.findUnique({
+      where: { id },
+      include: {
+        hinhAnhs: true, 
+      },
+    });
+
+    if (!bds) {
+      throw new NotFoundException(`Không tìm thấy Bất động sản với mã: ${id}`);
+    }
+
+    return bds;
+  }
+
+  // ==========================================
+  // THÊM MỚI BẤT ĐỘNG SẢN
+  // ==========================================
   async create(data: CreateBatDongSanDto, files?: Array<Express.Multer.File>) {
-    const { huong, moTa, ...batDongSanData } = data;
-    
     // Upload tất cả file lên Cloudinary nếu có
     const imageUrls = files ? await Promise.all(files.map(f => this.uploadToCloudinary(f))) : [];
 
     const lastBDS = await this.prisma.batDongSan.findFirst({
       where: { id: { startsWith: 'BDS0' } },
-orderBy: { id: 'desc' },
+      orderBy: { id: 'desc' },
     });
 
     let newId = 'BDS001';
@@ -104,25 +129,25 @@ orderBy: { id: 'desc' },
     return this.prisma.batDongSan.create({
       data: {
         id: newId,
-        khachHangId: batDongSanData.khachHangId,
-        nhuCau: batDongSanData.nhuCau ?? null,
-        tieuDe: batDongSanData.tieuDe,
-        loaiBDS: batDongSanData.loaiBDS,
-        diaChi: batDongSanData.diaChi,
-        dienTich: batDongSanData.dienTich,
-        giaTien: batDongSanData.giaTien as any,
-        tinhTrang: batDongSanData.tinhTrang,
+        khachHangId: data.khachHangId,
+        nhuCau: data.nhuCau ?? null,
+        tieuDe: data.tieuDe,
+        loaiBDS: data.loaiBDS,
+        diaChi: data.diaChi,
+        dienTich: data.dienTich,
+        giaTien: data.giaTien as any,
+        tinhTrang: data.tinhTrang,
         isDeleted: false,
         ngayTao: new Date(),
-        viTri: null,
-        huong: huong ?? null,
-        ghiChu: moTa ?? null,
-        chiTiet: huong || moTa ? { create: { huong, moTa } } : undefined,
+        viTri: data.viTri ?? null,
+        huong: data.huong ?? null,
+        ghiChu: data.ghiChu ?? data.moTa ?? null,
+        chiTiet: data.huong || data.moTa ? { create: { huong: data.huong, moTa: data.moTa } } : undefined,
         
         ...(imageUrls.length > 0 && {
           hinhAnhs: {
             create: imageUrls.map((url, index) => ({
-              id: Math.floor(Date.now() / 1000) + index, // ID tự sinh cho ảnh
+              id: Math.floor(Date.now() / 1000) + index, 
               duongDan: url,
               anhDaiDien: index === 0, 
             }))
@@ -131,36 +156,27 @@ orderBy: { id: 'desc' },
       },
     });
   }
-  async findOne(id: string) {
-    const bds = await this.prisma.batDongSan.findUnique({
-      where: { id },
-      include: {
-        hinhAnhs: true, // <--- Lệnh này cực kỳ quan trọng để kéo dữ liệu từ bảng HinhAnhBDS
-      },
-    });
 
-    if (!bds) {
-      throw new NotFoundException(`Không tìm thấy Bất động sản với mã: ${id}`);
-    }
-
-    return bds;
-  }
-
-
+  // ==========================================
+  // CẬP NHẬT BẤT ĐỘNG SẢN
+  // ==========================================
   async update(id: string, data: UpdateBatDongSanDto, files?: Array<Express.Multer.File>) {
     const newImageUrls = files ? await Promise.all(files.map(f => this.uploadToCloudinary(f))) : [];
 
     return this.prisma.batDongSan.update({
       where: { id },
       data: {
-        ...(data.khachHangId ? { khachHangId: data.khachHangId } : {}),
-        ...(data.tieuDe ? { tieuDe: data.tieuDe } : {}),
-        ...(data.loaiBDS ? { loaiBDS: data.loaiBDS } : {}),
-        ...(data.diaChi ? { diaChi: data.diaChi } : {}),
+        ...(data.khachHangId !== undefined ? { khachHangId: data.khachHangId } : {}),
+        ...(data.tieuDe !== undefined ? { tieuDe: data.tieuDe } : {}),
+        ...(data.loaiBDS !== undefined ? { loaiBDS: data.loaiBDS } : {}),
+        ...(data.diaChi !== undefined ? { diaChi: data.diaChi } : {}),
         ...(data.dienTich !== undefined ? { dienTich: data.dienTich } : {}),
-        ...(data.giaTien ? { giaTien: data.giaTien as any } : {}),
-        ...(data.nhuCau ? { nhuCau: data.nhuCau } : {}),
-        ...(data.tinhTrang ? { tinhTrang: data.tinhTrang } : {}),
+        ...(data.giaTien !== undefined ? { giaTien: data.giaTien as any } : {}),
+        ...(data.nhuCau !== undefined ? { nhuCau: data.nhuCau } : {}),
+        ...(data.tinhTrang !== undefined ? { tinhTrang: data.tinhTrang } : {}),
+...(data.viTri !== undefined ? { viTri: data.viTri } : {}),
+        ...(data.huong !== undefined ? { huong: data.huong } : {}),
+        ...(data.ghiChu !== undefined ? { ghiChu: data.ghiChu } : {}),
         
         ...(newImageUrls.length > 0 ? {
           hinhAnhs: {
@@ -172,6 +188,24 @@ orderBy: { id: 'desc' },
           }
         } : {})
       },
+    });
+  }
+
+  // ==========================================
+  // XÓA MỀM BẤT ĐỘNG SẢN
+  // ==========================================
+  async remove(id: string) {
+    const bds = await this.prisma.batDongSan.findUnique({
+      where: { id },
+    });
+
+    if (!bds) {
+      throw new NotFoundException(`Không tìm thấy Bất động sản với mã: ${id}`);
+    }
+
+    return this.prisma.batDongSan.update({
+      where: { id },
+      data: { isDeleted: true },
     });
   }
 }
