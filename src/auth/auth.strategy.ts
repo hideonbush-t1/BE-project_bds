@@ -24,6 +24,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
       where: { id: payload.sub },
       select: {
         id: true,
+        tenDangNhap: true, // Bổ sung để lấy maNV chuẩn xác
         hoTen: true,
         Role: true, // Lấy role chính xác từ DB
       },

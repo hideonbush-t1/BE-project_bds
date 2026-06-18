@@ -56,6 +56,7 @@ export class AuthService {
       where: { id: userId },
       select: {
         id: true,
+        tenDangNhap: true, 
         hoTen: true,
         email: true,
         soDienThoai: true,
