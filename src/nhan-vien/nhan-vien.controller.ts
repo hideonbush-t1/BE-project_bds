@@ -6,7 +6,8 @@ import {
   Param, 
   Patch, 
   Post, 
-  UseGuards 
+  UseGuards,
+  Query // 💡 THÊM IMPORT Query Ở ĐÂY
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -22,9 +23,10 @@ import { UpdateNhanVienDto } from './dto/update-nhan-vien.dto';
 export class NhanVienController {
   constructor(private readonly service: NhanVienService) {}
 
+  // 💡 SỬA TẠI ĐÂY: Hứng tham số ?search=... từ Frontend
   @Get()
-  findAll() {
-    return this.service.findAll();
+  findAll(@Query('search') search?: string) {
+    return this.service.findAll(search);
   }
 
   @Get(':id')

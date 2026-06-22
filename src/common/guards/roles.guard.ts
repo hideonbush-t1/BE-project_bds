@@ -15,17 +15,17 @@ export class RolesGuard implements CanActivate {
 
     if (!requiredRoles || requiredRoles.length === 0) return true;
 
-    const request = context.switchToHttp().getRequest<{ user?: JwtPayload }>();
+    const request = context.switchToHttp().getRequest<{ user?: JwtPayload & { role?: string } }>();
     const user = request.user;
 
-    // Kiểm tra user có tồn tại và có role không
-    if (!user || !user.Role) {
-      console.log('RolesGuard: User hoặc Role bị thiếu');
+    // 💡 ĐÃ SỬA: Bắt cả Role (hoa) và role (thường)
+    if (!user || (!user.Role && !user.role)) {
+      console.log('RolesGuard: User hoặc Role bị thiếu. Dữ liệu user:', user);
       return false;
     }
 
-    // Lấy role từ Token (đã là 'admin' hoặc 'employee')
-    const userRole = String(user.Role).toLowerCase().trim();
+    // 💡 ĐÃ SỬA: Gom dữ liệu linh hoạt
+    const userRole = String(user.Role || user.role).toLowerCase().trim();
 
     // Kiểm tra quyền: Admin được vào mọi nơi, còn lại phải khớp
     const hasRole = requiredRoles.some((role) => {
