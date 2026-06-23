@@ -1,10 +1,12 @@
-import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateGiaoDichDto {
   @IsString()
+  @IsNotEmpty()
   nhanVienId!: string;
 
   @IsString()
+  @IsNotEmpty()
   benMuaId!: string;
 
   @IsOptional()
@@ -12,12 +14,15 @@ export class CreateGiaoDichDto {
   benBanId?: string;
 
   @IsString()
+  @IsNotEmpty()
   batDongSanId!: string;
 
   @IsString()
+  @IsNotEmpty()
   ngayGD!: string;
 
   @IsString()
+  @IsNotEmpty()
   soTien!: string;
 
   @IsOptional()
@@ -29,5 +34,6 @@ export class CreateGiaoDichDto {
   moTaGD?: string;
 
   @IsString()
+  @IsNotEmpty()
   tinhTrang!: string;
 }
