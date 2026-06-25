@@ -27,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         email: true,
         soDienThoai: true,
         chucVu: true,
-        admin: true,
+        role: true, // Thay 'admin' bằng 'role'
       },
     });
 
@@ -39,7 +39,8 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
       sub: user.id,
       maNV: user.id,
       hoTen: user.hoTen,
-      isAdmin: user.admin === '1' || user.admin.toLowerCase() === 'true',
+      // Logic kiểm tra quyền dựa trên chuỗi 'admin' từ Database
+      isAdmin: user.role === 'admin',
     };
   }
 }

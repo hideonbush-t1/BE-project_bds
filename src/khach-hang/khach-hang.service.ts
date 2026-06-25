@@ -15,7 +15,7 @@ export class KhachHangService extends PrismaCrudService {
     return this.prisma.khachHang;
   }
 
-  // SRS 5.5.1: Xem danh sách
+  // 1. Danh sách
   override async findAll(query?: { loaiKH?: string; search?: string }) {
     return await this.prisma.khachHang.findMany({
       where: {
@@ -35,31 +35,28 @@ export class KhachHangService extends PrismaCrudService {
     });
   }
 
-  // SRS 5.5.3: Xem chi tiết
-  override async findOne(MaKH: string): Promise<any> {
+  // 2. Chi tiết
+  override async findOne(id: string): Promise<any> {
     const khachHang = await this.prisma.khachHang.findUnique({
-      where: { id: MaKH },
+      where: { id },
     });
-    if (!khachHang) throw new NotFoundException(`Khách hàng ${MaKH} không tồn tại`);
+    if (!khachHang) throw new NotFoundException(`Khách hàng ${id} không tồn tại`);
     return khachHang;
   }
 
-  // SRS 5.5.2: Thêm mới (Có kiểm tra trùng lặp)
+  // 3. Thêm mới
   async create(data: CreateKhachHangDto) {
-    // 1. Kiểm tra trùng ID
     const existingId = await this.prisma.khachHang.findUnique({ where: { id: data.maKH } });
     if (existingId) throw new ConflictException(`Mã khách hàng ${data.maKH} đã tồn tại!`);
 
-    // 2. Kiểm tra trùng CMND/CCCD
     if (data.soCMND) {
       const existingCMND = await this.prisma.khachHang.findFirst({ where: { soCMND: data.soCMND } });
-      if (existingCMND) throw new ConflictException("Số CMND/CCCD này đã tồn tại trong hệ thống!");
+      if (existingCMND) throw new ConflictException("Số CMND/CCCD đã tồn tại!");
     }
 
-    // 3. Kiểm tra trùng Email
     if (data.email) {
       const existingEmail = await this.prisma.khachHang.findFirst({ where: { email: data.email } });
-      if (existingEmail) throw new ConflictException("Email này đã được sử dụng!");
+      if (existingEmail) throw new ConflictException("Email đã được sử dụng!");
     }
 
     return await this.prisma.khachHang.create({
@@ -80,37 +77,39 @@ export class KhachHangService extends PrismaCrudService {
     });
   }
 
-  // SRS 5.5.3: Cập nhật
-  async update(MaKH: string, data: UpdateKhachHangDto) {
-    // 1. Kiểm tra trùng CMND mới
+  // 4. Cập nhật (Đã sửa lỗi gửi thừa 'maKH')
+  async update(id: string, data: UpdateKhachHangDto) {
+    // Kiểm tra trùng lặp (loại trừ chính bản thân khách hàng đang cập nhật)
     if (data.soCMND) {
       const existingCMND = await this.prisma.khachHang.findFirst({
-        where: { soCMND: data.soCMND, NOT: { id: MaKH } }
+        where: { soCMND: data.soCMND, NOT: { id } }
       });
       if (existingCMND) throw new ConflictException("Số CMND/CCCD này đã tồn tại!");
     }
 
-    // 2. Kiểm tra trùng Email mới
     if (data.email) {
       const existingEmail = await this.prisma.khachHang.findFirst({
-        where: { email: data.email, NOT: { id: MaKH } }
+        where: { email: data.email, NOT: { id } }
       });
-      if (existingEmail) throw new ConflictException("Email này đã được sử dụng bởi người khác!");
+      if (existingEmail) throw new ConflictException("Email đã được sử dụng!");
     }
 
+    // Tách dữ liệu cần cập nhật, loại bỏ ID/maKH ra khỏi data
+    const { maKH, ...updateFields } = data as any;
+
     return await this.prisma.khachHang.update({
-      where: { id: MaKH },
+      where: { id },
       data: {
-        ...data,
+        ...updateFields,
         ...(data.ngaySinh && { ngaySinh: new Date(data.ngaySinh) }),
       },
     });
   }
 
-  // Xóa vĩnh viễn (Hard Delete) có kiểm tra ràng buộc
-  override async remove(MaKH: string): Promise<any> {
+  // 5. Xóa
+  override async remove(id: string): Promise<any> {
     const bdsCount = await this.prisma.batDongSan.count({
-      where: { khachHangId: MaKH, isDeleted: false }
+      where: { khachHangId: id, isDeleted: false }
     });
 
     if (bdsCount > 0) {
@@ -118,7 +117,7 @@ export class KhachHangService extends PrismaCrudService {
     }
 
     return await this.prisma.khachHang.delete({
-      where: { id: MaKH },
+      where: { id },
     });
   }
 

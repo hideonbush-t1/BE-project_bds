@@ -29,11 +29,14 @@ export class AuthService {
       throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ');
     }
 
+    // Logic quyền mới: kiểm tra dựa trên chuỗi 'admin'
+    const isAdmin = user.role === 'admin';
+
     const payload: JwtPayload = {
       sub: user.id,
       maNV: user.id,
       hoTen: user.hoTen,
-      isAdmin: user.admin === '1' || user.admin.toLowerCase() === 'true',
+      isAdmin: isAdmin,
     };
 
     return {
@@ -47,13 +50,13 @@ export class AuthService {
         email: user.email,
         soDienThoai: user.soDienThoai,
         chucVu: user.chucVu,
-        isAdmin: user.admin === '1' || user.admin.toLowerCase() === 'true',
+        isAdmin: isAdmin,
       },
     };
   }
 
-  profile(userId: string) {
-    return this.prisma.nhanVien.findUnique({
+  async profile(userId: string) {
+    const user = await this.prisma.nhanVien.findUnique({
       where: { id: userId },
       select: {
         id: true,
@@ -61,21 +64,21 @@ export class AuthService {
         email: true,
         soDienThoai: true,
         chucVu: true,
-        admin: true,
+        role: true, // Lấy trường role từ DB
       },
-    }).then((user) =>
-      user
-        ? {
-            id: user.id,
-            maNV: user.id,
-            hoTen: user.hoTen,
-            email: user.email,
-            soDienThoai: user.soDienThoai,
-            chucVu: user.chucVu,
-            isAdmin: user.admin === '1' || user.admin.toLowerCase() === 'true',
-          }
-        : null,
-    );
+    });
+
+    return user
+      ? {
+          id: user.id,
+          maNV: user.id,
+          hoTen: user.hoTen,
+          email: user.email,
+          soDienThoai: user.soDienThoai,
+          chucVu: user.chucVu,
+          isAdmin: user.role === 'admin',
+        }
+      : null;
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {

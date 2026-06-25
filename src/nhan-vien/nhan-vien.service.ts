@@ -27,7 +27,7 @@ export class NhanVienService extends PrismaCrudService {
         chucVu: data.chucVu,
         soDienThoai: data.soDienThoai ?? '',
         email: data.email,
-        admin: data.isAdmin ? '1' : '0',
+        role: data.isAdmin ? 'admin' : 'employee', // Sửa logic lưu role
         tenDangNhap: data.maNV,
         anhDaiDien: null,
         isDeleted: false,
@@ -44,7 +44,8 @@ export class NhanVienService extends PrismaCrudService {
       ...(data.email ? { email: data.email } : {}),
       ...(data.soDienThoai ? { soDienThoai: data.soDienThoai } : {}),
       ...(data.chucVu ? { chucVu: data.chucVu } : {}),
-      ...(typeof data.isAdmin === 'boolean' ? { admin: data.isAdmin ? '1' : '0' } : {}),
+      // Sửa logic cập nhật role
+      ...(typeof data.isAdmin === 'boolean' ? { role: data.isAdmin ? 'admin' : 'employee' } : {}),
     };
     if (data.matKhau) {
       payload.matKhau = await bcrypt.hash(data.matKhau, 10);

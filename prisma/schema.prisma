@@ -8,20 +8,21 @@ datasource db {
 }
 
 model NhanVien {
-  id          String      @id @map("MaNV") @db.VarChar(5)
-  matKhau     String      @map("MatKhau") @db.VarChar(255)
-  hoTen       String      @map("TenNV") @db.VarChar(45)
-  diaChi      String      @map("DiaChi") @db.VarChar(100)
-  gioiTinh    String      @map("GioiTinh") @db.VarChar(10)
-  ngaySinh    DateTime    @map("NgaySinh") @db.Date
-  chucVu      String      @map("ChucVu") @db.VarChar(50)
-  soDienThoai String      @map("SoDienThoai") @db.VarChar(12)
-  email       String      @map("Email") @db.VarChar(50)
-  admin       String      @map("Admin") @db.VarChar(20)
-  tenDangNhap String?     @map("TenDangNhap") @db.VarChar(50)
-  anhDaiDien  String?     @map("AnhDaiDien") @db.VarChar(255)
-  isDeleted   Boolean?    @default(false) @map("IsDeleted")
-  ngayTao     DateTime?   @default(now()) @map("NgayTao") @db.DateTime(0)
+  id          String    @id @map("MaNV") @db.VarChar(5)
+  matKhau     String    @map("MatKhau") @db.VarChar(255)
+  hoTen       String    @map("TenNV") @db.VarChar(45)
+  diaChi      String    @map("DiaChi") @db.VarChar(100)
+  gioiTinh    String    @map("GioiTinh") @db.VarChar(10)
+  ngaySinh    DateTime  @map("NgaySinh") @db.Date
+  chucVu      String    @map("ChucVu") @db.VarChar(50)
+  soDienThoai String    @map("SoDienThoai") @db.VarChar(12)
+  email       String    @map("Email") @db.VarChar(50)
+  role        String    @default("0") @map("Role") @db.VarChar(20) // Đã sửa thành Role
+  tenDangNhap String?   @map("TenDangNhap") @db.VarChar(50)
+  anhDaiDien  String?   @map("AnhDaiDien") @db.VarChar(255)
+  isDeleted   Boolean?  @default(false) @map("IsDeleted")
+  ngayTao     DateTime? @default(now()) @map("NgayTao") @db.DateTime(0)
+  
   giaoDiches  GiaoDich[]  @relation("NhanVienGiaoDich")
   khachhang   KhachHang[]
   thongBaos   ThongBao[]  @relation("NhanVienThongBao")

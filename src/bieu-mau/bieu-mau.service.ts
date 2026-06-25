@@ -26,7 +26,15 @@ export class BieuMauService extends PrismaCrudService {
   }
 
   // 2. Hàm lấy thông tin để tải file
-  async getFileForDownload(maHoSo: number) {
+  // Đã sửa tham số nhận vào là string hoặc number để Controller truyền vào linh hoạt
+  async getFileForDownload(id: string | number) {
+    // Ép kiểu về number để khớp với MaHoSo trong Prisma schema
+    const maHoSo = typeof id === 'string' ? parseInt(id, 10) : id;
+
+    if (isNaN(maHoSo)) {
+      throw new NotFoundException('ID không hợp lệ');
+    }
+
     const bieuMau = await this.prisma.hosobieumau.findUnique({
       where: { MaHoSo: maHoSo },
     });
@@ -36,5 +44,13 @@ export class BieuMauService extends PrismaCrudService {
     }
 
     return bieuMau;
+  }
+
+  // Bổ sung hàm findOne cho Controller
+  async findOne(id: string | number) {
+    const maHoSo = typeof id === 'string' ? parseInt(id, 10) : id;
+    return await this.prisma.hosobieumau.findUnique({
+      where: { MaHoSo: maHoSo },
+    });
   }
 }
