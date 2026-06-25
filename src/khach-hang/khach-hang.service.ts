@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaCrudService } from '../common/crud/prisma-crud.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateKhachHangDto } from './dto/create-khach-hang.dto';
@@ -8,17 +8,14 @@ import { UpdateKhachHangDto } from './dto/update-khach-hang.dto';
 export class KhachHangService extends PrismaCrudService {
   constructor(private readonly prisma: PrismaService) {
     super();
-    this.whereKey = 'id'; // Use Prisma model primary key property
+    this.whereKey = 'id';
   }
 
   protected get delegate() {
-    return this.prisma.khachHang; // Kết nối với model khachHang từ Prisma Client của nhóm
+    return this.prisma.khachHang;
   }
 
-  /**
-   * SRS 5.5.1: Xem danh sách khách hàng 
-   * Đã cập nhật tìm kiếm theo Mã KH (id), Tên và SĐT
-   */
+  // SRS 5.5.1: Xem danh sách
   override async findAll(query?: { loaiKH?: string; search?: string }) {
     return await this.prisma.khachHang.findMany({
       where: {
@@ -27,33 +24,44 @@ export class KhachHangService extends PrismaCrudService {
         ...(query?.search
           ? {
               OR: [
-                { id: { contains: query.search } },           // Tìm theo Mã KH
-                { hoTen: { contains: query.search } },        // Tìm theo Tên
-                { soDienThoai: { contains: query.search } },  // Tìm theo SĐT
+                { id: { contains: query.search } },
+                { hoTen: { contains: query.search } },
+                { soDienThoai: { contains: query.search } },
               ],
             }
           : {}),
       },
-      orderBy: {
-        ngayTao: 'desc',
-      },
+      orderBy: { ngayTao: 'desc' },
     });
   }
 
-  /**
-   * SRS 5.5.3: Ghi đè hàm xem chi tiết khách hàng bằng MaKH (Kiểu string)
-   */
+  // SRS 5.5.3: Xem chi tiết
   override async findOne(MaKH: string): Promise<any> {
-    return await this.prisma.khachHang.findUnique({
+    const khachHang = await this.prisma.khachHang.findUnique({
       where: { id: MaKH },
     });
+    if (!khachHang) throw new NotFoundException(`Khách hàng ${MaKH} không tồn tại`);
+    return khachHang;
   }
 
-  /**
-   * SRS 5.5.2: Thêm mới khách hàng vào hệ thống
-   */
+  // SRS 5.5.2: Thêm mới (Có kiểm tra trùng lặp)
   async create(data: CreateKhachHangDto) {
-    // @ts-ignore
+    // 1. Kiểm tra trùng ID
+    const existingId = await this.prisma.khachHang.findUnique({ where: { id: data.maKH } });
+    if (existingId) throw new ConflictException(`Mã khách hàng ${data.maKH} đã tồn tại!`);
+
+    // 2. Kiểm tra trùng CMND/CCCD
+    if (data.soCMND) {
+      const existingCMND = await this.prisma.khachHang.findFirst({ where: { soCMND: data.soCMND } });
+      if (existingCMND) throw new ConflictException("Số CMND/CCCD này đã tồn tại trong hệ thống!");
+    }
+
+    // 3. Kiểm tra trùng Email
+    if (data.email) {
+      const existingEmail = await this.prisma.khachHang.findFirst({ where: { email: data.email } });
+      if (existingEmail) throw new ConflictException("Email này đã được sử dụng!");
+    }
+
     return await this.prisma.khachHang.create({
       data: {
         id: data.maKH,
@@ -72,63 +80,57 @@ export class KhachHangService extends PrismaCrudService {
     });
   }
 
-  /**
-   * SRS 5.5.3: Chỉnh sửa thông tin khách hàng hiện tại
-   */
+  // SRS 5.5.3: Cập nhật
   async update(MaKH: string, data: UpdateKhachHangDto) {
-    // @ts-ignore
+    // 1. Kiểm tra trùng CMND mới
+    if (data.soCMND) {
+      const existingCMND = await this.prisma.khachHang.findFirst({
+        where: { soCMND: data.soCMND, NOT: { id: MaKH } }
+      });
+      if (existingCMND) throw new ConflictException("Số CMND/CCCD này đã tồn tại!");
+    }
+
+    // 2. Kiểm tra trùng Email mới
+    if (data.email) {
+      const existingEmail = await this.prisma.khachHang.findFirst({
+        where: { email: data.email, NOT: { id: MaKH } }
+      });
+      if (existingEmail) throw new ConflictException("Email này đã được sử dụng bởi người khác!");
+    }
+
     return await this.prisma.khachHang.update({
       where: { id: MaKH },
       data: {
-        ...(data.loaiKH ? { loaiKH: data.loaiKH } : {}),
-        ...(data.hoTen ? { hoTen: data.hoTen } : {}),
-        ...(data.gioiTinh ? { gioiTinh: data.gioiTinh } : {}),
-        ...(data.ngaySinh ? { ngaySinh: new Date(data.ngaySinh) } : {}),
-        ...(data.diaChi ? { diaChi: data.diaChi } : {}),
-        ...(data.soDienThoai ? { soDienThoai: data.soDienThoai } : {}),
-        ...(data.email ? { email: data.email } : {}),
-        ...(data.nhanVienId ? { nhanVienId: data.nhanVienId } : {}),
-        ...(data.soCMND ? { soCMND: data.soCMND } : {}),
+        ...data,
+        ...(data.ngaySinh && { ngaySinh: new Date(data.ngaySinh) }),
       },
     });
   }
 
-  /**
-   * SRS 5.5.3: Ghi đè hàm xóa khách hàng (Xóa mềm - Đổi IsDeleted thành 1)
-   */
+  // Xóa vĩnh viễn (Hard Delete) có kiểm tra ràng buộc
   override async remove(MaKH: string): Promise<any> {
-    // @ts-ignore
-    return await this.prisma.khachHang.update({
+    const bdsCount = await this.prisma.batDongSan.count({
+      where: { khachHangId: MaKH, isDeleted: false }
+    });
+
+    if (bdsCount > 0) {
+      throw new ConflictException("Không thể xóa! Khách hàng này đang sở hữu bất động sản.");
+    }
+
+    return await this.prisma.khachHang.delete({
       where: { id: MaKH },
-      data: { isDeleted: true },
     });
   }
-
-  // =========================================================================
-  // CÁC HÀM TRUY VẤN DỮ LIỆU ĐIỀU HƯỚNG TỪ TRANG CHI TIẾT THEO SRS
-  // =========================================================================
 
   async findNhuCauByKhachHang(khachHangId: string) {
     return await this.prisma.nhuCau.findMany({
-      where: {
-        khachHangId: khachHangId, 
-        isDeleted: false,
-      },
-      orderBy: {
-        id: 'desc',
-      },
+      where: { khachHangId, isDeleted: false },
     });
   }
 
   async findBatDongSanByKhachHang(khachHangId: string) {
     return await this.prisma.batDongSan.findMany({
-      where: {
-        khachHangId: khachHangId, 
-        isDeleted: false,
-      },
-      orderBy: {
-        ngayTao: 'desc',
-      },
+      where: { khachHangId, isDeleted: false },
     });
   }
 }

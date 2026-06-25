@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards, Query } from '@nestjs/common';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -11,6 +11,12 @@ import { UpdateBatDongSanDto } from './dto/update-bat-dong-san.dto';
 @Controller('bat-dong-san')
 export class BatDongSanController {
   constructor(private readonly service: BatDongSanService) {}
+
+  // Endpoint lọc (Đặt ở trên cùng để tránh bị nhầm với :id)
+  @Get('filter')
+  async filter(@Query('loaiBDS') loaiBDS: string, @Query('viTri') viTri: string) {
+    return this.service.filter(loaiBDS, viTri);
+  }
 
   @Get()
   findAll() {

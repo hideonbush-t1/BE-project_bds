@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Query, UseGuards, HttpStatus, HttpCode } from '@nestjs/common';
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -12,28 +12,40 @@ import { NhuCauService } from './nhu-cau.service';
 export class NhuCauController {
   constructor(private readonly service: NhuCauService) {}
 
+  @Get('search')
+  async search(@Query() query: { q?: string }) {
+    return this.service.findManyWithFilters(query);
+  }
+
+  @Get('khach-hang/:khachHangId')
+  async findByKhachHang(@Param('khachHangId') khachHangId: string) {
+    return this.service.findByKhachHang(khachHangId);
+  }
+
   @Get()
-  findAll() {
+  async findAll() {
     return this.service.findAll();
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
+  async findOne(@Param('id') id: string) {
     return this.service.findOne(id);
   }
 
   @Post()
-  create(@Body() dto: CreateNhuCauDto) {
+  @HttpCode(HttpStatus.CREATED)
+  async create(@Body() dto: CreateNhuCauDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateNhuCauDto) {
+  async update(@Param('id') id: string, @Body() dto: UpdateNhuCauDto) {
     return this.service.update(id, dto);
   }
 
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: string) {
     return this.service.remove(id);
   }
 }

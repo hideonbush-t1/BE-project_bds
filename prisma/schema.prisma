@@ -64,7 +64,7 @@ model NhuCau {
   khachHang   KhachHang @relation(fields: [khachHangId], references: [id], onUpdate: Restrict, map: "FK_NC_KH")
 
   @@index([khachHangId], map: "MaKH")
-  @@map("nhucau")
+  @@map("NhuCau")
 }
 
 model BatDongSan {

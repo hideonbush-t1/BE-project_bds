@@ -15,42 +15,78 @@ export class BatDongSanService extends PrismaCrudService {
     return this.prisma.batDongSan;
   }
 
-  create(data: CreateBatDongSanDto) {
+  // SỬA LỖI: Tối ưu bộ lọc để tránh lỗi undefined trong OR
+  async filter(loaiBDS?: string, viTri?: string) {
+    const whereCondition: any = { isDeleted: false };
+
+    if (loaiBDS) {
+      whereCondition.loaiBDS = { contains: loaiBDS };
+    }
+
+    if (viTri) {
+      whereCondition.OR = [
+        { diaChi: { contains: viTri } },
+        { chiTiet: { viTri: { contains: viTri } } }
+      ];
+    }
+
+    return this.prisma.batDongSan.findMany({
+      where: whereCondition,
+      select: {
+        id: true,
+        loaiBDS: true,
+        diaChi: true,
+        dienTich: true,
+        giaTien: true,
+        tinhTrang: true,
+        chiTiet: { select: { viTri: true } }
+      },
+      orderBy: { ngayTao: 'desc' },
+    });
+  }
+
+  findAll() {
+    return this.prisma.batDongSan.findMany({
+      where: { isDeleted: false },
+      select: {
+        id: true,
+        khachHangId: true,
+        tieuDe: true,
+        loaiBDS: true,
+        diaChi: true,
+        dienTich: true,
+        giaTien: true,
+        tinhTrang: true,
+        ngayTao: true,
+      },
+      orderBy: { ngayTao: 'desc' },
+    });
+  }
+
+  async create(data: CreateBatDongSanDto) {
     const { huong, moTa, ...batDongSanData } = data;
-    const propertyId = `BDS${Date.now()}`.slice(0, 20);
+    const propertyId = `BDS${Date.now()}`;
+    
     return this.prisma.batDongSan.create({
       data: {
+        ...batDongSanData,
         id: propertyId,
-        khachHangId: batDongSanData.khachHangId,
-        nhuCau: batDongSanData.nhuCau ?? null,
-        tieuDe: batDongSanData.tieuDe,
-        loaiBDS: batDongSanData.loaiBDS,
-        diaChi: batDongSanData.diaChi,
-        dienTich: batDongSanData.dienTich,
-        giaTien: batDongSanData.giaTien as any,
-        tinhTrang: batDongSanData.tinhTrang,
         isDeleted: false,
         ngayTao: new Date(),
-        viTri: null,
-        huong: huong ?? null,
-        ghiChu: moTa ?? null,
-        chiTiet: huong || moTa ? { create: { huong, moTa } } : undefined,
+        // Nếu chiTiet là một bảng liên kết (Relation), dùng cấu trúc connectOrCreate hoặc create
+        chiTiet: (huong || moTa) ? { 
+            create: { huong, moTa } 
+        } : undefined,
       },
     });
   }
 
-  update(id: string, data: UpdateBatDongSanDto) {
+  async update(id: string, data: UpdateBatDongSanDto) {
+    // Tối ưu: Dùng spread trực tiếp cho các trường đơn giản
     return this.prisma.batDongSan.update({
       where: { id },
       data: {
-        ...(data.khachHangId ? { khachHangId: data.khachHangId } : {}),
-        ...(data.tieuDe ? { tieuDe: data.tieuDe } : {}),
-        ...(data.loaiBDS ? { loaiBDS: data.loaiBDS } : {}),
-        ...(data.diaChi ? { diaChi: data.diaChi } : {}),
-        ...(data.dienTich !== undefined ? { dienTich: data.dienTich } : {}),
-        ...(data.giaTien ? { giaTien: data.giaTien as any } : {}),
-        ...(data.nhuCau ? { nhuCau: data.nhuCau } : {}),
-        ...(data.tinhTrang ? { tinhTrang: data.tinhTrang } : {}),
+        ...data,
       },
     });
   }

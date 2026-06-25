@@ -1,37 +1,23 @@
 import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer'; // Cần để ép kiểu số
 
 export class UpdateNhuCauDto {
-  @IsOptional()
-  @IsString()
-  khachHangId?: string;
+  @IsOptional() @IsString() khachHangId?: string;
+  @IsOptional() @IsString() loaiNC?: string;     // Khớp tên trường trong Prisma
+  @IsOptional() @IsString() loaiBDS?: string;
+  @IsOptional() @IsString() viTri?: string;
 
-  @IsOptional()
-  @IsString()
-  loaiNhuCau?: string;
-
-  @IsOptional()
-  @IsString()
-  loaiBDS?: string;
-
-  @IsOptional()
-  @IsString()
-  viTri?: string;
-
-  @IsOptional()
-  @IsNumber()
+  @IsOptional() 
+  @IsNumber() 
+  @Type(() => Number) // BẮT BUỘC: Ép string "50" -> number 50
   dienTichMin?: number;
 
-  @IsOptional()
-  @IsNumber()
+  @IsOptional() 
+  @IsNumber() 
+  @Type(() => Number) 
   dienTichMax?: number;
 
-  @IsOptional()
-  giaMin?: string;
-
-  @IsOptional()
-  giaMax?: string;
-
-  @IsOptional()
-  @IsString()
-  ghiChu?: string;
+  @IsOptional() @IsString() giaMin?: string;
+  @IsOptional() @IsString() giaMax?: string;
+  @IsOptional() @IsString() ghiChu?: string;
 }
