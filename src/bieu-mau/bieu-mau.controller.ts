@@ -1,9 +1,13 @@
 import { 
   Controller, Get, Param, Post, Delete, Put,
-  UseGuards, ParseIntPipe, Body, UseInterceptors, UploadedFile, BadRequestException 
+  UseGuards, ParseIntPipe, Body, UseInterceptors, UploadedFile, BadRequestException,
+  Res // 1. Import thêm Res
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { Response } from 'express'; // 2. Import Response từ express
+import * as https from 'https'; // 3. Import https module có sẵn của Node.js
+
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -19,10 +23,10 @@ export class BieuMauController {
   // 1. LẤY DANH SÁCH BIỂU MẪU
   // ==========================================
   @Get()
-@Roles('admin', 'employee') // Thêm 'employee' vào đây
-findAll() {
-  return this.service.findAll();
-}
+  @Roles('admin', 'employee')
+  findAll() {
+    return this.service.findAll();
+  }
 
   // ==========================================
   // 2. LẤY CHI TIẾT 1 BIỂU MẪU
@@ -40,7 +44,7 @@ findAll() {
   @Roles('admin')
   @UseInterceptors(
     FileInterceptor('file', {
-      storage: memoryStorage(), // Ép buộc lưu tạm vào RAM để lấy file.buffer
+      storage: memoryStorage(),
     }),
   )
   async create(
@@ -62,6 +66,7 @@ findAll() {
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id); 
   }
+
   // ==========================================
   // 5. CẬP NHẬT BIỂU MẪU (SỬA)
   // ==========================================
@@ -74,9 +79,46 @@ findAll() {
   )
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() dto: CreateBieuMauDto, // Tái sử dụng DTO hoặc tạo UpdateBieuMauDto
-    @UploadedFile() file?: Express.Multer.File, // File có thể undefined nếu user không chọn file mới
+    @Body() dto: CreateBieuMauDto,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
     return this.service.updateBieuMau(id, dto, file);
+  }
+
+  // ==========================================
+  // 6. TẢI FILE VỀ MÁY (ÉP DOWNLOAD)
+  // ==========================================
+  @Get('download/:id')
+  @Roles('admin', 'employee') // Phân quyền cho phép ai được tải
+  async downloadFile(
+    @Param('id', ParseIntPipe) id: number,
+    @Res() res: Response,
+  ) {
+    // Tái sử dụng hàm getFileForDownload để lấy dữ liệu biểu mẫu
+    const bieuMau = await this.service.getFileForDownload(id);
+
+    if (!bieuMau.DuongDan) {
+      throw new BadRequestException('Hồ sơ biểu mẫu này chưa có file đính kèm.');
+    }
+
+    // Lấy đuôi file từ đường dẫn Cloudinary (VD: pdf, docx)
+    const ext = bieuMau.DuongDan.split('.').pop() || 'pdf';
+    
+    // Xử lý chuỗi để tạo tên file tải về (Loại bỏ khoảng trắng bằng dấu gạch dưới)
+    const safeFileName = `${bieuMau.TenHoSo.replace(/\s+/g, '_')}.${ext}`;
+
+    // Sử dụng module https để stream file từ Cloudinary về thẳng Response của NestJS
+    https.get(bieuMau.DuongDan, (fileStream) => {
+      
+      // Header quan trọng nhất: Ép trình duyệt tải xuống dưới dạng attachment
+      res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeFileName)}"`);
+      // Báo cho trình duyệt biết đây là file nhị phân (tránh việc trình duyệt cố gắng đọc nó)
+      res.setHeader('Content-Type', 'application/octet-stream');
+      
+      fileStream.pipe(res);
+
+    }).on('error', () => {
+      throw new BadRequestException('Không thể kết nối đến máy chủ Cloudinary để tải file');
+    });
   }
 }
