@@ -44,21 +44,35 @@ export class KhachHangService extends PrismaCrudService {
     return khachHang;
   }
 
-  // 3. Thêm mới
+  /**
+   * Thêm mới khách hàng với cơ chế chặn trùng lặp
+   * Đã xử lý lỗi Foreign Key Constraint cho nhanVienId
+   */
   async create(data: CreateKhachHangDto) {
-    const existingId = await this.prisma.khachHang.findUnique({ where: { id: data.maKH } });
-    if (existingId) throw new ConflictException(`Mã khách hàng ${data.maKH} đã tồn tại!`);
+    // 1. Kiểm tra trùng mã Khách hàng (id)
+    const existingKH = await this.prisma.khachHang.findUnique({
+      where: { id: data.maKH }
+    });
+    if (existingKH) {
+      throw new ConflictException(`Mã khách hàng ${data.maKH} đã tồn tại!`);
+    }
 
+    // 2. Kiểm tra trùng số CMND/CCCD
     if (data.soCMND) {
-      const existingCMND = await this.prisma.khachHang.findFirst({ where: { soCMND: data.soCMND } });
-      if (existingCMND) throw new ConflictException("Số CMND/CCCD đã tồn tại!");
+      const existingCMND = await this.prisma.khachHang.findFirst({
+        where: { soCMND: data.soCMND, isDeleted: false }
+      });
+      if (existingCMND) {
+        throw new ConflictException(`Số CMND/CCCD ${data.soCMND} đã được sử dụng bởi khách hàng khác!`);
+      }
     }
 
-    if (data.email) {
-      const existingEmail = await this.prisma.khachHang.findFirst({ where: { email: data.email } });
-      if (existingEmail) throw new ConflictException("Email đã được sử dụng!");
-    }
+    // 3. Xử lý logic nhanVienId để tránh lỗi Foreign Key
+    const finalNhanVienId = (data.nhanVienId && data.nhanVienId !== 'NV_CHUA_XAC_DINH') 
+                            ? data.nhanVienId 
+                            : null;
 
+    // 4. Lưu vào DB
     return await this.prisma.khachHang.create({
       data: {
         id: data.maKH,
@@ -69,7 +83,7 @@ export class KhachHangService extends PrismaCrudService {
         diaChi: data.diaChi ?? '',
         soDienThoai: data.soDienThoai ?? '',
         email: data.email ?? null,
-        nhanVienId: data.nhanVienId ?? null,
+        nhanVienId: finalNhanVienId,
         isDeleted: false,
         ngayTao: new Date(),
         soCMND: data.soCMND ?? null,
@@ -77,26 +91,28 @@ export class KhachHangService extends PrismaCrudService {
     });
   }
 
-  // 4. Cập nhật (Đã sửa lỗi gửi thừa 'maKH')
+  /**
+   * Chỉnh sửa thông tin khách hàng
+   */
   async update(id: string, data: UpdateKhachHangDto) {
-    // Kiểm tra trùng lặp (loại trừ chính bản thân khách hàng đang cập nhật)
+    // 1. Kiểm tra trùng CMND khi cập nhật
     if (data.soCMND) {
       const existingCMND = await this.prisma.khachHang.findFirst({
-        where: { soCMND: data.soCMND, NOT: { id } }
+        where: { 
+          soCMND: data.soCMND, 
+          isDeleted: false,
+          NOT: { id: id } 
+        }
       });
-      if (existingCMND) throw new ConflictException("Số CMND/CCCD này đã tồn tại!");
+      if (existingCMND) {
+        throw new ConflictException(`Số CMND/CCCD ${data.soCMND} đã được sử dụng bởi khách hàng khác!`);
+      }
     }
 
-    if (data.email) {
-      const existingEmail = await this.prisma.khachHang.findFirst({
-        where: { email: data.email, NOT: { id } }
-      });
-      if (existingEmail) throw new ConflictException("Email đã được sử dụng!");
-    }
-
-    // Tách dữ liệu cần cập nhật, loại bỏ ID/maKH ra khỏi data
+    // Tách dữ liệu
     const { maKH, ...updateFields } = data as any;
 
+    // 2. Thực hiện cập nhật
     return await this.prisma.khachHang.update({
       where: { id },
       data: {

@@ -1,12 +1,15 @@
-import { IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 export class CreateThongBaoDto {
   @IsString()
-  tieuDe!: string;
+  @IsNotEmpty()
+  tieuDe!: string; // THÊM DẤU ! Ở ĐÂY
 
   @IsString()
-  noiDung!: string;
+  @IsNotEmpty()
+  noiDung!: string; // THÊM DẤU ! Ở ĐÂY
 
-  @IsString()
-  nhanVienId!: string;
+  @IsOptional()
+  @IsString() // ĐỔI TỪ IsNumber SANG IsString
+  nhanVienId?: string; // ĐỔI TỪ number SANG string
 }

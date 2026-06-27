@@ -18,12 +18,12 @@ export class GiaoDichService extends PrismaCrudService {
   create(data: CreateGiaoDichDto) {
     return this.prisma.giaoDich.create({
       data: {
-        id: `GD${Date.now()}`.slice(0, 20),
+        id: `GD${Date.now()}`.slice(0, 20), // Sinh mã ngẫu nhiên chuẩn
         nhanVienId: data.nhanVienId,
         benMua: data.benMuaId,
         benBan: data.benBanId ?? null,
         batDongSanId: data.batDongSanId,
-        soTien: data.soTien as any,
+        soTien: Number(data.soTien), // Ép kiểu Số an toàn thay vì dùng 'as any'
         ngayGD: new Date(data.ngayGD),
         tyLeHoaHong: data.tyLeHoaHong ?? 0,
         moTaGD: data.moTaGD ?? null,
@@ -38,15 +38,16 @@ export class GiaoDichService extends PrismaCrudService {
     return this.prisma.giaoDich.update({
       where: { id },
       data: {
-        ...(data.nhanVienId ? { nhanVienId: data.nhanVienId } : {}),
-        ...(data.benMuaId ? { benMua: data.benMuaId } : {}),
-        ...(data.benBanId ? { benBan: data.benBanId } : {}),
-        ...(data.batDongSanId ? { batDongSanId: data.batDongSanId } : {}),
-        ...(data.soTien ? { soTien: data.soTien as any } : {}),
-        ...(data.ngayGD ? { ngayGD: new Date(data.ngayGD) } : {}),
-        ...(data.tyLeHoaHong !== undefined ? { tyLeHoaHong: data.tyLeHoaHong } : {}),
-        ...(data.moTaGD ? { moTaGD: data.moTaGD } : {}),
-        ...(data.tinhTrang ? { tinhTrang: data.tinhTrang } : {}),
+        // Tối ưu lại cú pháp kiểm tra điều kiện cho gọn gàng hơn
+        ...(data.nhanVienId && { nhanVienId: data.nhanVienId }),
+        ...(data.benMuaId && { benMua: data.benMuaId }),
+        ...(data.benBanId && { benBan: data.benBanId }),
+        ...(data.batDongSanId && { batDongSanId: data.batDongSanId }),
+        ...(data.soTien && { soTien: Number(data.soTien) }),
+        ...(data.ngayGD && { ngayGD: new Date(data.ngayGD) }),
+        ...(data.tyLeHoaHong !== undefined && { tyLeHoaHong: data.tyLeHoaHong }),
+        ...(data.moTaGD && { moTaGD: data.moTaGD }),
+        ...(data.tinhTrang && { tinhTrang: data.tinhTrang }),
       },
     });
   }

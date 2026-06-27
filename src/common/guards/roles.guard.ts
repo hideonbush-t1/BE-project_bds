@@ -13,25 +13,30 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
-    if (!requiredRoles || requiredRoles.length === 0) {
-      return true;
-    }
+    if (!requiredRoles || requiredRoles.length === 0) return true;
 
-    const request = context.switchToHttp().getRequest<{ user?: JwtPayload }>();
+    const request = context.switchToHttp().getRequest<{ user?: JwtPayload & { role?: string } }>();
     const user = request.user;
 
-    if (!user) {
+    // 💡 ĐÃ SỬA: Bắt cả Role (hoa) và role (thường)
+    if (!user || (!user.Role && !user.role)) {
+      console.log('RolesGuard: User hoặc Role bị thiếu. Dữ liệu user:', user);
       return false;
     }
 
-    if (requiredRoles.includes('admin') && user.isAdmin) {
-      return true;
+    // 💡 ĐÃ SỬA: Gom dữ liệu linh hoạt
+    const userRole = String(user.Role || user.role).toLowerCase().trim();
+
+    // Kiểm tra quyền: Admin được vào mọi nơi, còn lại phải khớp
+    const hasRole = requiredRoles.some((role) => {
+      if (userRole === 'admin') return true; // Admin là "chúa tể"
+      return role.toLowerCase() === userRole;
+    });
+
+    if (!hasRole) {
+      console.log(`RolesGuard: Từ chối truy cập. Role thực tế: ${userRole}, Yêu cầu: ${requiredRoles}`);
     }
 
-    if (requiredRoles.includes('employee') && !user.isAdmin) {
-      return true;
-    }
-
-    return false;
+    return hasRole;
   }
 }

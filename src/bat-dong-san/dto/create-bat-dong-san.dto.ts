@@ -1,4 +1,5 @@
 import { IsNumber, IsOptional, IsString } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class CreateBatDongSanDto {
   @IsString()
@@ -13,6 +14,8 @@ export class CreateBatDongSanDto {
   @IsString()
   diaChi!: string;
 
+  // Giữ nguyên logic ép kiểu siêu chuẩn của bạn
+  @Type(() => Number) 
   @IsNumber()
   dienTich!: number;
 
@@ -29,6 +32,14 @@ export class CreateBatDongSanDto {
   @IsOptional()
   @IsString()
   huong?: string;
+
+  @IsOptional()
+  @IsString()
+  viTri?: string;
+
+  @IsOptional()
+  @IsString()
+  ghiChu?: string;
 
   @IsOptional()
   @IsString()

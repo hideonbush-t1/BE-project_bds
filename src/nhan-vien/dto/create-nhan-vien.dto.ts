@@ -21,6 +21,7 @@ export class CreateNhanVienDto {
   @IsString()
   chucVu!: string;
 
-  @IsBoolean()
-  isAdmin!: boolean;
+  @IsString()
+  @IsOptional()
+  Role?: string;
 }

@@ -16,33 +16,27 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto) {
+    // 1. Tìm nhân viên trong DB
     const user = await this.prisma.nhanVien.findUnique({
       where: { id: loginDto.maNV },
     });
-
-    if (!user) {
-      throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ');
+    
+    // 2. Kiểm tra tồn tại và xác thực mật khẩu
+    if (!user || !(await bcrypt.compare(loginDto.matKhau, user.matKhau))) {
+      throw new UnauthorizedException('Sai thông tin đăng nhập');
     }
 
-    const isPasswordValid = await bcrypt.compare(loginDto.matKhau, user.matKhau);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Thông tin đăng nhập không hợp lệ');
-    }
-
-    // Logic quyền mới: kiểm tra dựa trên chuỗi 'admin'
-    const isAdmin = user.role === 'admin';
-
-    const payload: JwtPayload = {
-      sub: user.id,
-      maNV: user.id,
+    // 3. Tạo Payload cho Token (Đảm bảo Role viết hoa khớp với interface)
+    const payload: JwtPayload = { 
+      sub: user.id, 
+      maNV: user.id, 
       hoTen: user.hoTen,
-      isAdmin: isAdmin,
+      Role: user.Role 
     };
-
+    
+    // 4. Trả về token và thông tin người dùng
     return {
-      accessToken: await this.jwtService.signAsync(payload, {
-        secret: this.configService.get<string>('JWT_SECRET') ?? 'change-this-secret',
-      }),
+      access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         maNV: user.id,
@@ -50,8 +44,8 @@ export class AuthService {
         email: user.email,
         soDienThoai: user.soDienThoai,
         chucVu: user.chucVu,
-        isAdmin: isAdmin,
-      },
+        role: user.Role, // Giá trị trả về cho Frontend
+      }
     };
   }
 
@@ -60,29 +54,32 @@ export class AuthService {
       where: { id: userId },
       select: {
         id: true,
+        tenDangNhap: true, 
         hoTen: true,
         email: true,
         soDienThoai: true,
         chucVu: true,
-        role: true, // Lấy trường role từ DB
+        Role: true, 
       },
     });
 
-    return user
-      ? {
-          id: user.id,
-          maNV: user.id,
-          hoTen: user.hoTen,
-          email: user.email,
-          soDienThoai: user.soDienThoai,
-          chucVu: user.chucVu,
-          isAdmin: user.role === 'admin',
-        }
-      : null;
+    if (!user) return null;
+
+    return {
+      id: user.id,
+      maNV: user.id,
+      hoTen: user.hoTen,
+      email: user.email,
+      soDienThoai: user.soDienThoai,
+      chucVu: user.chucVu,
+      role: user.Role, 
+    };
   }
 
   async changePassword(userId: string, dto: ChangePasswordDto) {
-    const user = await this.prisma.nhanVien.findUnique({ where: { id: userId } });
+    const user = await this.prisma.nhanVien.findUnique({ 
+      where: { id: userId } 
+    });
 
     if (!user) {
       throw new UnauthorizedException('Người dùng không tồn tại');

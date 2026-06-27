@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { PrismaCrudService } from '../common/crud/prisma-crud.service';
@@ -16,8 +16,54 @@ export class NhanVienService extends PrismaCrudService {
     return this.prisma.nhanVien;
   }
 
+  // 💡 Ghi đè hàm findAll để hỗ trợ thanh tìm kiếm từ Frontend
+  async findAll(search?: string) {
+    // Chỉ định các trường an toàn được phép trả về (Tuyệt đối không có matKhau)
+    const safeSelect = { 
+      id: true, 
+      hoTen: true, 
+      email: true, 
+      soDienThoai: true, 
+      chucVu: true, 
+      Role: true, 
+      tenDangNhap: true,
+      isDeleted: true,
+      ngayTao: true
+    };
+
+    // Nếu không có từ khóa tìm kiếm -> Lấy tất cả các trường an toàn
+    if (!search) {
+      return this.prisma.nhanVien.findMany({
+        orderBy: { ngayTao: 'desc' },
+        select: safeSelect,
+      });
+    }
+
+    // Nếu có tìm kiếm
+    return this.prisma.nhanVien.findMany({
+      where: {
+        OR: [
+          { id: { contains: search } },
+          { hoTen: { contains: search } },
+          { soDienThoai: { contains: search } },
+          { email: { contains: search } }
+        ],
+      },
+      orderBy: { ngayTao: 'desc' },
+      select: safeSelect,
+    });
+  }
+
   async create(data: CreateNhanVienDto) {
-    return this.prisma.nhanVien.create({
+    // 💡 Kiểm tra xem mã NV đã tồn tại chưa
+    const existingNV = await this.prisma.nhanVien.findUnique({
+      where: { id: data.maNV }
+    });
+    if (existingNV) {
+      throw new BadRequestException('Mã nhân viên này đã tồn tại, vui lòng nhập mã khác!');
+    }
+
+    const result = await this.prisma.nhanVien.create({
       data: {
         id: data.maNV,
         hoTen: data.hoTen,
@@ -27,7 +73,7 @@ export class NhanVienService extends PrismaCrudService {
         chucVu: data.chucVu,
         soDienThoai: data.soDienThoai ?? '',
         email: data.email,
-        role: data.isAdmin ? 'admin' : 'employee', // Sửa logic lưu role
+        Role: data.Role === 'admin' ? 'admin' : 'employee', // Logic gán Role
         tenDangNhap: data.maNV,
         anhDaiDien: null,
         isDeleted: false,
@@ -35,6 +81,10 @@ export class NhanVienService extends PrismaCrudService {
         matKhau: await bcrypt.hash(data.matKhau, 10),
       },
     });
+
+    // 💡 BẢO MẬT: Loại bỏ mật khẩu trước khi trả về cho Frontend
+    const { matKhau, ...safeResult } = result;
+    return safeResult;
   }
 
   async update(id: string, data: UpdateNhanVienDto) {
@@ -44,12 +94,21 @@ export class NhanVienService extends PrismaCrudService {
       ...(data.email ? { email: data.email } : {}),
       ...(data.soDienThoai ? { soDienThoai: data.soDienThoai } : {}),
       ...(data.chucVu ? { chucVu: data.chucVu } : {}),
-      // Sửa logic cập nhật role
-      ...(typeof data.isAdmin === 'boolean' ? { role: data.isAdmin ? 'admin' : 'employee' } : {}),
+      // Cập nhật Role
+      ...(data.Role ? { Role: data.Role === 'admin' ? 'admin' : 'employee' } : {}),
     };
+
     if (data.matKhau) {
       payload.matKhau = await bcrypt.hash(data.matKhau, 10);
     }
-    return this.prisma.nhanVien.update({ where: { id }, data: payload });
+    
+    const result = await this.prisma.nhanVien.update({ 
+      where: { id }, 
+      data: payload 
+    });
+
+    // 💡 BẢO MẬT: Loại bỏ mật khẩu trước khi trả về
+    const { matKhau, ...safeResult } = result;
+    return safeResult;
   }
 }
