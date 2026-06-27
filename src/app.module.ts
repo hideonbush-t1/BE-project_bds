@@ -5,7 +5,6 @@ import { BatDongSanModule } from './bat-dong-san/bat-dong-san.module';
 import { GiaoDichModule } from './giao-dich/giao-dich.module';
 import { KhachHangModule } from './khach-hang/khach-hang.module';
 import { NhanVienModule } from './nhan-vien/nhan-vien.module';
-import { NhuCauModule } from './nhu-cau/nhu-cau.module';
 import { PublicApiModule } from './public-api/public-api.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { ThongBaoModule } from './thong-bao/thong-bao.module';
@@ -20,7 +19,6 @@ import { ThongKeModule } from './thong-ke/thong-ke.module';
     AuthModule,
     NhanVienModule,
     KhachHangModule,
-    NhuCauModule,
     BatDongSanModule,
     GiaoDichModule,
     ThongBaoModule,

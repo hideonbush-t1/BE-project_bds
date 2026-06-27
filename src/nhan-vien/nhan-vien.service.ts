@@ -16,7 +16,7 @@ export class NhanVienService extends PrismaCrudService {
     return this.prisma.nhanVien;
   }
 
-  // 💡 BỔ SUNG: Ghi đè hàm findAll để hỗ trợ thanh tìm kiếm từ Frontend
+  // 💡 Ghi đè hàm findAll để hỗ trợ thanh tìm kiếm từ Frontend
   async findAll(search?: string) {
     // Chỉ định các trường an toàn được phép trả về (Tuyệt đối không có matKhau)
     const safeSelect = { 
@@ -31,7 +31,7 @@ export class NhanVienService extends PrismaCrudService {
       ngayTao: true
     };
 
-    // Nếu không có từ khóa tìm kiếm -> Lấy tất cả nhưng chỉ lấy các trường an toàn
+    // Nếu không có từ khóa tìm kiếm -> Lấy tất cả các trường an toàn
     if (!search) {
       return this.prisma.nhanVien.findMany({
         orderBy: { ngayTao: 'desc' },
@@ -43,7 +43,7 @@ export class NhanVienService extends PrismaCrudService {
     return this.prisma.nhanVien.findMany({
       where: {
         OR: [
-          { id: { contains: search } }, // id chính là maNV
+          { id: { contains: search } },
           { hoTen: { contains: search } },
           { soDienThoai: { contains: search } },
           { email: { contains: search } }
@@ -55,7 +55,7 @@ export class NhanVienService extends PrismaCrudService {
   }
 
   async create(data: CreateNhanVienDto) {
-    // 💡 BỔ SUNG: Kiểm tra xem mã NV đã tồn tại chưa để tránh lỗi 500 sập server
+    // 💡 Kiểm tra xem mã NV đã tồn tại chưa
     const existingNV = await this.prisma.nhanVien.findUnique({
       where: { id: data.maNV }
     });
@@ -73,7 +73,7 @@ export class NhanVienService extends PrismaCrudService {
         chucVu: data.chucVu,
         soDienThoai: data.soDienThoai ?? '',
         email: data.email,
-        Role: data.Role === 'admin' ? 'admin' : 'employee',
+        Role: data.Role === 'admin' ? 'admin' : 'employee', // Logic gán Role
         tenDangNhap: data.maNV,
         anhDaiDien: null,
         isDeleted: false,
@@ -94,6 +94,7 @@ export class NhanVienService extends PrismaCrudService {
       ...(data.email ? { email: data.email } : {}),
       ...(data.soDienThoai ? { soDienThoai: data.soDienThoai } : {}),
       ...(data.chucVu ? { chucVu: data.chucVu } : {}),
+      // Cập nhật Role
       ...(data.Role ? { Role: data.Role === 'admin' ? 'admin' : 'employee' } : {}),
     };
 

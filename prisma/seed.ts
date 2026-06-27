@@ -10,7 +10,7 @@ async function main() {
   await prisma.nhanVien.upsert({
     where: { id: 'admin' },
     update: {
-      Role: 'admin', // Cập nhật role nếu đã tồn tại
+      Role: 'admin',
     },
     create: {
       id: 'admin',
@@ -22,7 +22,7 @@ async function main() {
       soDienThoai: '0900000000',
       email: 'admin@bds.local',
       matKhau: passwordHash,
-      Role: 'admin', // Sử dụng Role (Viết hoa chữ R)
+      Role: 'admin',
       tenDangNhap: 'admin',
       anhDaiDien: null,
       isDeleted: false,
@@ -34,7 +34,7 @@ async function main() {
   await prisma.nhanVien.upsert({
     where: { id: 'nv001' },
     update: {
-      Role: 'employee', // Cập nhật role nếu đã tồn tại
+      Role: 'employee',
     },
     create: {
       id: 'nv001',
@@ -46,7 +46,7 @@ async function main() {
       soDienThoai: '0911111111',
       email: 'nv001@bds.local',
       matKhau: passwordHash,
-      Role: 'employee', // Sử dụng Role (Viết hoa chữ R)
+      Role: 'employee',
       tenDangNhap: 'nv001',
       anhDaiDien: null,
       isDeleted: false,

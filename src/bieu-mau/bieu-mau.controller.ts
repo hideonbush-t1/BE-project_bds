@@ -1,12 +1,12 @@
 import { 
   Controller, Get, Param, Post, Delete, Put,
   UseGuards, ParseIntPipe, Body, UseInterceptors, UploadedFile, BadRequestException,
-  Res // 1. Import thêm Res
+  Res 
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
-import { Response } from 'express'; // 2. Import Response từ express
-import * as https from 'https'; // 3. Import https module có sẵn của Node.js
+import { Response } from 'express';
+import * as https from 'https';
 
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -15,7 +15,7 @@ import { BieuMauService } from './bieu-mau.service';
 import { CreateBieuMauDto } from './dto/create-bieu-mau.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('ho-so-bieu-mau') // Đã đồng bộ với Frontend (api.get('/bieu-mau'))
+@Controller('ho-so-bieu-mau')
 export class BieuMauController {
   constructor(private readonly service: BieuMauService) {}
 
@@ -54,7 +54,6 @@ export class BieuMauController {
     if (!file) {
       throw new BadRequestException('Vui lòng đính kèm file!');
     }
-    
     return this.service.createBieuMau(dto, file);
   }
 
@@ -89,34 +88,24 @@ export class BieuMauController {
   // 6. TẢI FILE VỀ MÁY (ÉP DOWNLOAD)
   // ==========================================
   @Get('download/:id')
-  @Roles('admin', 'employee') // Phân quyền cho phép ai được tải
+  @Roles('admin', 'employee')
   async downloadFile(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,
   ) {
-    // Tái sử dụng hàm getFileForDownload để lấy dữ liệu biểu mẫu
     const bieuMau = await this.service.getFileForDownload(id);
 
     if (!bieuMau.DuongDan) {
       throw new BadRequestException('Hồ sơ biểu mẫu này chưa có file đính kèm.');
     }
 
-    // Lấy đuôi file từ đường dẫn Cloudinary (VD: pdf, docx)
     const ext = bieuMau.DuongDan.split('.').pop() || 'pdf';
-    
-    // Xử lý chuỗi để tạo tên file tải về (Loại bỏ khoảng trắng bằng dấu gạch dưới)
     const safeFileName = `${bieuMau.TenHoSo.replace(/\s+/g, '_')}.${ext}`;
 
-    // Sử dụng module https để stream file từ Cloudinary về thẳng Response của NestJS
     https.get(bieuMau.DuongDan, (fileStream) => {
-      
-      // Header quan trọng nhất: Ép trình duyệt tải xuống dưới dạng attachment
       res.setHeader('Content-Disposition', `attachment; filename="${encodeURIComponent(safeFileName)}"`);
-      // Báo cho trình duyệt biết đây là file nhị phân (tránh việc trình duyệt cố gắng đọc nó)
       res.setHeader('Content-Type', 'application/octet-stream');
-      
       fileStream.pipe(res);
-
     }).on('error', () => {
       throw new BadRequestException('Không thể kết nối đến máy chủ Cloudinary để tải file');
     });

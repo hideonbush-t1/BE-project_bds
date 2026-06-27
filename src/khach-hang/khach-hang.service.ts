@@ -1,4 +1,4 @@
-import { Injectable, ConflictException } from '@nestjs/common'; // Thêm ConflictException
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
 import { PrismaCrudService } from '../common/crud/prisma-crud.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { CreateKhachHangDto } from './dto/create-khach-hang.dto';
@@ -15,10 +15,7 @@ export class KhachHangService extends PrismaCrudService {
     return this.prisma.khachHang;
   }
 
-  /**
-   * SRS 5.5.1: Xem danh sách khách hàng 
-   * Đã cập nhật tìm kiếm theo Mã KH (id), Tên và SĐT
-   */
+  // 1. Danh sách
   override async findAll(query?: { loaiKH?: string; search?: string }) {
     return await this.prisma.khachHang.findMany({
       where: {
@@ -27,30 +24,28 @@ export class KhachHangService extends PrismaCrudService {
         ...(query?.search
           ? {
               OR: [
-                { id: { contains: query.search } },           // Tìm theo Mã KH
-                { hoTen: { contains: query.search } },        // Tìm theo Tên
-                { soDienThoai: { contains: query.search } },  // Tìm theo SĐT
+                { id: { contains: query.search } },
+                { hoTen: { contains: query.search } },
+                { soDienThoai: { contains: query.search } },
               ],
             }
           : {}),
       },
-      orderBy: {
-        ngayTao: 'desc',
-      },
+      orderBy: { ngayTao: 'desc' },
     });
+  }
+
+  // 2. Chi tiết
+  override async findOne(id: string): Promise<any> {
+    const khachHang = await this.prisma.khachHang.findUnique({
+      where: { id },
+    });
+    if (!khachHang) throw new NotFoundException(`Khách hàng ${id} không tồn tại`);
+    return khachHang;
   }
 
   /**
-   * SRS 5.5.3: Ghi đè hàm xem chi tiết khách hàng bằng MaKH (Kiểu string)
-   */
-  override async findOne(MaKH: string): Promise<any> {
-    return await this.prisma.khachHang.findUnique({
-      where: { id: MaKH },
-    });
-  }
-
-/**
-   * SRS 5.5.2: Thêm mới khách hàng với cơ chế chặn trùng lặp
+   * Thêm mới khách hàng với cơ chế chặn trùng lặp
    * Đã xử lý lỗi Foreign Key Constraint cho nhanVienId
    */
   async create(data: CreateKhachHangDto) {
@@ -62,7 +57,7 @@ export class KhachHangService extends PrismaCrudService {
       throw new ConflictException(`Mã khách hàng ${data.maKH} đã tồn tại!`);
     }
 
-    // 2. Kiểm tra trùng số CMND/CCCD (nếu có nhập)
+    // 2. Kiểm tra trùng số CMND/CCCD
     if (data.soCMND) {
       const existingCMND = await this.prisma.khachHang.findFirst({
         where: { soCMND: data.soCMND, isDeleted: false }
@@ -73,12 +68,11 @@ export class KhachHangService extends PrismaCrudService {
     }
 
     // 3. Xử lý logic nhanVienId để tránh lỗi Foreign Key
-    // Nếu nhanVienId là giá trị mặc định hoặc trống, gán là null
     const finalNhanVienId = (data.nhanVienId && data.nhanVienId !== 'NV_CHUA_XAC_DINH') 
                             ? data.nhanVienId 
                             : null;
 
-    // 4. Thực hiện lưu vào DB
+    // 4. Lưu vào DB
     return await this.prisma.khachHang.create({
       data: {
         id: data.maKH,
@@ -89,7 +83,7 @@ export class KhachHangService extends PrismaCrudService {
         diaChi: data.diaChi ?? '',
         soDienThoai: data.soDienThoai ?? '',
         email: data.email ?? null,
-        nhanVienId: finalNhanVienId, // Sử dụng biến đã xử lý sạch
+        nhanVienId: finalNhanVienId,
         isDeleted: false,
         ngayTao: new Date(),
         soCMND: data.soCMND ?? null,
@@ -98,16 +92,16 @@ export class KhachHangService extends PrismaCrudService {
   }
 
   /**
-   * SRS 5.5.3: Chỉnh sửa thông tin khách hàng hiện tại
+   * Chỉnh sửa thông tin khách hàng
    */
-  async update(MaKH: string, data: UpdateKhachHangDto) {
-    // 1. Nếu có cập nhật số CMND, cần kiểm tra xem số mới có bị trùng với người khác không
+  async update(id: string, data: UpdateKhachHangDto) {
+    // 1. Kiểm tra trùng CMND khi cập nhật
     if (data.soCMND) {
       const existingCMND = await this.prisma.khachHang.findFirst({
         where: { 
           soCMND: data.soCMND, 
           isDeleted: false,
-          NOT: { id: MaKH } // Loại trừ chính khách hàng đang sửa
+          NOT: { id: id } 
         }
       });
       if (existingCMND) {
@@ -115,59 +109,43 @@ export class KhachHangService extends PrismaCrudService {
       }
     }
 
+    // Tách dữ liệu
+    const { maKH, ...updateFields } = data as any;
+
     // 2. Thực hiện cập nhật
     return await this.prisma.khachHang.update({
-      where: { id: MaKH },
+      where: { id },
       data: {
-        ...(data.loaiKH ? { loaiKH: data.loaiKH } : {}),
-        ...(data.hoTen ? { hoTen: data.hoTen } : {}),
-        ...(data.gioiTinh ? { gioiTinh: data.gioiTinh } : {}),
-        ...(data.ngaySinh ? { ngaySinh: new Date(data.ngaySinh) } : {}),
-        ...(data.diaChi ? { diaChi: data.diaChi } : {}),
-        ...(data.soDienThoai ? { soDienThoai: data.soDienThoai } : {}),
-        ...(data.email ? { email: data.email } : {}),
-        ...(data.nhanVienId ? { nhanVienId: data.nhanVienId } : {}),
-        ...(data.soCMND ? { soCMND: data.soCMND } : {}),
+        ...updateFields,
+        ...(data.ngaySinh && { ngaySinh: new Date(data.ngaySinh) }),
       },
     });
   }
 
-  /**
-   * SRS 5.5.3: Ghi đè hàm xóa khách hàng (Xóa mềm - Đổi IsDeleted thành 1)
-   */
-  override async remove(MaKH: string): Promise<any> {
-    // @ts-ignore
-    return await this.prisma.khachHang.update({
-      where: { id: MaKH },
-      data: { isDeleted: true },
+  // 5. Xóa
+  override async remove(id: string): Promise<any> {
+    const bdsCount = await this.prisma.batDongSan.count({
+      where: { khachHangId: id, isDeleted: false }
+    });
+
+    if (bdsCount > 0) {
+      throw new ConflictException("Không thể xóa! Khách hàng này đang sở hữu bất động sản.");
+    }
+
+    return await this.prisma.khachHang.delete({
+      where: { id },
     });
   }
-
-  // =========================================================================
-  // CÁC HÀM TRUY VẤN DỮ LIỆU ĐIỀU HƯỚNG TỪ TRANG CHI TIẾT THEO SRS
-  // =========================================================================
 
   async findNhuCauByKhachHang(khachHangId: string) {
     return await this.prisma.nhuCau.findMany({
-      where: {
-        khachHangId: khachHangId, 
-        isDeleted: false,
-      },
-      orderBy: {
-        id: 'desc',
-      },
+      where: { khachHangId, isDeleted: false },
     });
   }
 
   async findBatDongSanByKhachHang(khachHangId: string) {
     return await this.prisma.batDongSan.findMany({
-      where: {
-        khachHangId: khachHangId, 
-        isDeleted: false,
-      },
-      orderBy: {
-        ngayTao: 'desc',
-      },
+      where: { khachHangId, isDeleted: false },
     });
   }
 }

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
@@ -7,42 +7,50 @@ import { JwtPayload } from '../common/interfaces/jwt-payload.interface';
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  private readonly logger = new Logger(JwtStrategy.name);
+
   constructor(
     configService: ConfigService,
     private readonly prisma: PrismaService,
   ) {
     super({
+      // Lấy token từ header Authorization: Bearer <token>
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
+      // Đảm bảo JWT_SECRET trong .env trùng với secret khi ký token ở AuthService
       secretOrKey: configService.get<string>('JWT_SECRET') ?? 'change-this-secret',
     });
   }
 
   async validate(payload: JwtPayload) {
-    // 1. Tìm user từ database để lấy thông tin mới nhất
+    this.logger.debug(`🔍 [Backend] Payload nhận được: ${JSON.stringify(payload)}`);
+
+    // 1. Tìm user từ database
     const user = await this.prisma.nhanVien.findUnique({
       where: { id: payload.sub },
       select: {
         id: true,
-        tenDangNhap: true, // Bổ sung để lấy maNV chuẩn xác
+        tenDangNhap: true,
         hoTen: true,
-        Role: true, // Lấy role chính xác từ DB
+        Role: true,
       },
     });
 
-    // 2. Nếu user không tồn tại, trả về payload gốc (để giữ logic bảo mật)
+    // 2. Nếu không tìm thấy user hoặc token lỗi
     if (!user) {
-      return payload;
+      this.logger.warn(`❌ [Backend] Không tìm thấy user với ID: ${payload.sub}`);
+      throw new UnauthorizedException('Token không hợp lệ hoặc người dùng không tồn tại');
     }
 
-    // 3. Trả về đúng cấu trúc để gắn vào request.user
-    // Các Controller sau này sẽ truy cập được thông qua: request.user.Role, request.user.hoTen...
+    this.logger.log(`✅ [Backend] User đã xác thực thành công: ${user.tenDangNhap}`);
+
+    // 3. Trả về thông tin gắn vào request.user
     return {
-      id: user.id,         // Dùng cho sub
+      id: user.id,
       sub: user.id,
-      maNV: user.id,      // Giả định dùng ID làm mã nhân viên
+      maNV: user.id,
       hoTen: user.hoTen,
-      Role: user.Role,    // Giá trị 'admin' hoặc 'employee' từ DB
+      Role: user.Role, 
     };
   }
 }

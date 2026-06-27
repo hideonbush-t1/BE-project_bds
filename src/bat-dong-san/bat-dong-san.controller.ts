@@ -27,6 +27,12 @@ import { UpdateBatDongSanDto } from './dto/update-bat-dong-san.dto';
 export class BatDongSanController {
   constructor(private readonly service: BatDongSanService) {}
 
+  // Endpoint lọc (Đặt ở trên cùng để tránh bị nhầm với :id)
+  @Get('filter')
+  async filter(@Query('loaiBDS') loaiBDS: string, @Query('viTri') viTri: string) {
+    return this.service.filter(loaiBDS, viTri);
+  }
+
   @Get()
   findAll() {
     return this.service.findAll();

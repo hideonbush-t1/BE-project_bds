@@ -16,29 +16,27 @@ export class AuthService {
   ) {}
 
   async login(loginDto: LoginDto) {
-    // Tìm nhân viên trong DB
+    // 1. Tìm nhân viên trong DB
     const user = await this.prisma.nhanVien.findUnique({
       where: { id: loginDto.maNV },
     });
     
-    // Kiểm tra mật khẩu
+    // 2. Kiểm tra tồn tại và xác thực mật khẩu
     if (!user || !(await bcrypt.compare(loginDto.matKhau, user.matKhau))) {
       throw new UnauthorizedException('Sai thông tin đăng nhập');
     }
 
-    // 1. Tạo token: Truyền đầy đủ 4 thuộc tính theo interface JwtPayload
+    // 3. Tạo Payload cho Token (Đảm bảo Role viết hoa khớp với interface)
     const payload: JwtPayload = { 
       sub: user.id, 
-      maNV: user.id, // Giả định maNV trùng với id, nếu có cột riêng hãy sửa thành user.maNV
+      maNV: user.id, 
       hoTen: user.hoTen,
       Role: user.Role 
     };
     
-    const access_token = this.jwtService.sign(payload);
-
-    // 2. Trả về token và thông tin người dùng
+    // 4. Trả về token và thông tin người dùng
     return {
-      access_token,
+      access_token: this.jwtService.sign(payload),
       user: {
         id: user.id,
         maNV: user.id,
@@ -46,7 +44,7 @@ export class AuthService {
         email: user.email,
         soDienThoai: user.soDienThoai,
         chucVu: user.chucVu,
-        role: user.Role, // Trả thẳng giá trị từ DB ('admin' hoặc 'employee')
+        role: user.Role, // Giá trị trả về cho Frontend
       }
     };
   }
