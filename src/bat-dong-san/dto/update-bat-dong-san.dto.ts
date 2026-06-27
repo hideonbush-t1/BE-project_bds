@@ -18,7 +18,7 @@ export class UpdateBatDongSanDto {
   @IsString()
   diaChi?: string;
 
-  // Ép kiểu cho trường hợp cập nhật
+  // Giữ nguyên logic của bạn
   @IsOptional()
   @Type(() => Number)
   @IsNumber()
@@ -40,12 +40,10 @@ export class UpdateBatDongSanDto {
   @IsString()
   huong?: string;
 
-  // Đã thêm trường viTri
   @IsOptional()
   @IsString()
   viTri?: string;
 
-  // Đã thêm trường ghiChu
   @IsOptional()
   @IsString()
   ghiChu?: string;
@@ -53,4 +51,9 @@ export class UpdateBatDongSanDto {
   @IsOptional()
   @IsString()
   moTa?: string;
+
+  // CHỈ THÊM ĐÚNG DÒNG NÀY ĐỂ FIX LỖI XÓA ẢNH (400 Bad Request)
+  @IsOptional()
+  @IsString()
+  deletedImages?: string;
 }

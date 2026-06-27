@@ -89,10 +89,76 @@ export class BatDongSanService extends PrismaCrudService {
   }
 
   // ==========================================
+  // HÀM TÌM KIẾM NÂNG CAO (ĐÃ TÁCH ĐỊA CHỈ & VỊ TRÍ)
+  // ==========================================
+  async search(
+    loaiBDS?: string, 
+    viTri?: string, 
+    diaChi?: string, // Thêm tham số diaChi
+    giaMin?: number, 
+    giaMax?: number, 
+    huong?: string
+  ) {
+    const where: any = {
+      isDeleted: false,
+    };
+
+    if (loaiBDS) {
+      where.loaiBDS = loaiBDS;
+    }
+
+    if (huong) {
+      where.huong = huong;
+    }
+
+    // Tìm kiếm độc lập theo Vị trí (cắt khoảng trắng 2 đầu)
+    if (viTri) {
+      where.viTri = { contains: viTri.trim() };
+    }
+
+    // Tìm kiếm độc lập theo Địa chỉ (cắt khoảng trắng 2 đầu)
+    if (diaChi) {
+      where.diaChi = { contains: diaChi.trim() };
+    }
+
+    if (giaMin !== undefined || giaMax !== undefined) {
+      where.giaTien = {};
+      if (giaMin !== undefined) where.giaTien.gte = giaMin; 
+      if (giaMax !== undefined) where.giaTien.lte = giaMax; 
+    }
+
+    return this.prisma.batDongSan.findMany({
+      where,
+      select: {
+        id: true,
+        khachHangId: true,
+        tieuDe: true,
+        loaiBDS: true,
+        diaChi: true,
+        dienTich: true,
+        giaTien: true,
+        tinhTrang: true,
+        ngayTao: true,
+        viTri: true, // Lấy thêm trường viTri để kiểm tra ở Frontend
+        hinhAnhs: {
+          select: {
+            id: true,
+            duongDan: true,
+            anhDaiDien: true,
+          }
+        }
+      },
+      orderBy: {
+        id: 'asc',
+      },
+    });
+  }
+
+  // ==========================================
   // LẤY CHI TIẾT 1 BẤT ĐỘNG SẢN
   // ==========================================
   async findOne(id: string) {
-const bds = await this.prisma.batDongSan.findUnique({
+    const bds = await this.prisma.batDongSan.findUnique({
       where: { id },
       include: {
         hinhAnhs: true, 
@@ -158,10 +224,20 @@ const bds = await this.prisma.batDongSan.findUnique({
   }
 
   // ==========================================
-  // CẬP NHẬT BẤT ĐỘNG SẢN
+  // CẬP NHẬT BẤT ĐỘNG SẢN (Đã xử lý xóa ảnh cũ)
   // ==========================================
   async update(id: string, data: UpdateBatDongSanDto, files?: Array<Express.Multer.File>) {
     const newImageUrls = files ? await Promise.all(files.map(f => this.uploadToCloudinary(f))) : [];
+
+    // 1. Chuyển đổi mảng deletedImages (dạng chuỗi JSON) thành mảng ID (số)
+    let deletedImageIds: number[] = [];
+    if (data.deletedImages) {
+      try {
+        deletedImageIds = JSON.parse(data.deletedImages);
+      } catch (e) {
+        console.error("Lỗi khi đọc danh sách ảnh cần xóa:", e);
+      }
+    }
 
     return this.prisma.batDongSan.update({
       where: { id },
@@ -174,17 +250,28 @@ const bds = await this.prisma.batDongSan.findUnique({
         ...(data.giaTien !== undefined ? { giaTien: data.giaTien as any } : {}),
         ...(data.nhuCau !== undefined ? { nhuCau: data.nhuCau } : {}),
         ...(data.tinhTrang !== undefined ? { tinhTrang: data.tinhTrang } : {}),
-...(data.viTri !== undefined ? { viTri: data.viTri } : {}),
+        ...(data.viTri !== undefined ? { viTri: data.viTri } : {}),
         ...(data.huong !== undefined ? { huong: data.huong } : {}),
         ...(data.ghiChu !== undefined ? { ghiChu: data.ghiChu } : {}),
         
-        ...(newImageUrls.length > 0 ? {
+        // 2. Logic xử lý xóa ảnh cũ và thêm ảnh mới vào Database
+        ...(newImageUrls.length > 0 || deletedImageIds.length > 0 ? {
           hinhAnhs: {
-            create: newImageUrls.map((url, index) => ({
-              id: Math.floor(Date.now() / 1000) + index,
-              duongDan: url,
-              anhDaiDien: false,
-            }))
+            // Lệnh xóa các ảnh nằm trong mảng deletedImageIds
+            ...(deletedImageIds.length > 0 ? {
+              deleteMany: {
+                id: { in: deletedImageIds }
+              }
+            } : {}),
+            
+            // Lệnh tạo mới các ảnh vừa upload
+            ...(newImageUrls.length > 0 ? {
+              create: newImageUrls.map((url, index) => ({
+                id: Math.floor(Date.now() / 1000) + index,
+                duongDan: url,
+                anhDaiDien: false,
+              }))
+            } : {})
           }
         } : {})
       },

@@ -14,7 +14,7 @@ export class CreateBatDongSanDto {
   @IsString()
   diaChi!: string;
 
-  // Sử dụng Type để ép kiểu chuỗi từ FormData sang Number
+  // Giữ nguyên logic ép kiểu siêu chuẩn của bạn
   @Type(() => Number) 
   @IsNumber()
   dienTich!: number;
@@ -33,12 +33,10 @@ export class CreateBatDongSanDto {
   @IsString()
   huong?: string;
 
-  // Đã thêm trường viTri
   @IsOptional()
   @IsString()
   viTri?: string;
 
-  // Đã thêm trường ghiChu để khớp với Frontend
   @IsOptional()
   @IsString()
   ghiChu?: string;
