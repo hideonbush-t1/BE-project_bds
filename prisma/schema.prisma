@@ -110,7 +110,7 @@ model ChiTietBDS {
 }
 
 model HinhAnhBDS {
-  id           Int        @id @default(autoincrement()) @map("MaHinhAnh")
+  id           Int        @id @map("MaHinhAnh")
   batDongSanId String     @map("MaBDS") @db.VarChar(20)
   duongDan     String     @map("DuongDan") @db.VarChar(255)
   anhDaiDien   Boolean?   @default(false) @map("AnhDaiDien")
