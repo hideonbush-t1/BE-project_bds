@@ -2,25 +2,19 @@ import { Body, Controller, Delete, Get, Param, Patch, Post, UseGuards } from '@n
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
-import { CreateGiaoDichDto } from './dto/create-giao-dich.dto';
-import { UpdateGiaoDichDto } from './dto/update-giao-dich.dto';
-import { GiaoDichService } from './giao-dich.service';
+import { CreateNhuCauDto } from './dto/create-nhu-cau.dto';
+import { UpdateNhuCauDto } from './dto/update-nhu-cau.dto';
+import { NhuCauService } from './nhu-cau.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin', 'employee')
-@Controller('giao-dich')
-export class GiaoDichController {
-  constructor(private readonly service: GiaoDichService) {}
+@Controller('nhu-cau')
+export class NhuCauController {
+  constructor(private readonly service: NhuCauService) {}
 
   @Get()
   findAll() {
     return this.service.findAll();
-  }
-
-  // THÊM MỚI: API Gợi ý (Matching) - PHẢI ĐẶT TRÊN @Get(':id')
-  @Get('suggest/:nhuCauId')
-  suggestMatching(@Param('nhuCauId') nhuCauId: string) {
-    return this.service.suggest(nhuCauId);
   }
 
   @Get(':id')
@@ -29,12 +23,12 @@ export class GiaoDichController {
   }
 
   @Post()
-  create(@Body() dto: CreateGiaoDichDto) {
+  create(@Body() dto: CreateNhuCauDto) {
     return this.service.create(dto);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateGiaoDichDto) {
+  update(@Param('id') id: string, @Body() dto: UpdateNhuCauDto) {
     return this.service.update(id, dto);
   }
 

@@ -16,9 +16,10 @@ export class NhanVienService extends PrismaCrudService {
     return this.prisma.nhanVien;
   }
 
-  // 💡 Ghi đè hàm findAll để hỗ trợ thanh tìm kiếm từ Frontend
+  // ===============================================
+  // 1. LẤY DANH SÁCH (Đã thêm lọc isDeleted: false)
+  // ===============================================
   async findAll(search?: string) {
-    // Chỉ định các trường an toàn được phép trả về (Tuyệt đối không có matKhau)
     const safeSelect = { 
       id: true, 
       hoTen: true, 
@@ -31,9 +32,10 @@ export class NhanVienService extends PrismaCrudService {
       ngayTao: true
     };
 
-    // Nếu không có từ khóa tìm kiếm -> Lấy tất cả các trường an toàn
+    // Nếu không có tìm kiếm
     if (!search) {
       return this.prisma.nhanVien.findMany({
+        where: { isDeleted: false }, // 💡 BẮT BUỘC: Chỉ lấy NV chưa bị xóa
         orderBy: { ngayTao: 'desc' },
         select: safeSelect,
       });
@@ -42,6 +44,7 @@ export class NhanVienService extends PrismaCrudService {
     // Nếu có tìm kiếm
     return this.prisma.nhanVien.findMany({
       where: {
+        isDeleted: false, // 💡 BẮT BUỘC: Chỉ tìm trong những NV chưa bị xóa
         OR: [
           { id: { contains: search } },
           { hoTen: { contains: search } },
@@ -55,7 +58,6 @@ export class NhanVienService extends PrismaCrudService {
   }
 
   async create(data: CreateNhanVienDto) {
-    // 💡 Kiểm tra xem mã NV đã tồn tại chưa
     const existingNV = await this.prisma.nhanVien.findUnique({
       where: { id: data.maNV }
     });
@@ -73,7 +75,7 @@ export class NhanVienService extends PrismaCrudService {
         chucVu: data.chucVu,
         soDienThoai: data.soDienThoai ?? '',
         email: data.email,
-        Role: data.Role === 'admin' ? 'admin' : 'employee', // Logic gán Role
+        Role: data.Role === 'admin' ? 'admin' : 'employee', 
         tenDangNhap: data.maNV,
         anhDaiDien: null,
         isDeleted: false,
@@ -82,7 +84,6 @@ export class NhanVienService extends PrismaCrudService {
       },
     });
 
-    // 💡 BẢO MẬT: Loại bỏ mật khẩu trước khi trả về cho Frontend
     const { matKhau, ...safeResult } = result;
     return safeResult;
   }
@@ -94,7 +95,6 @@ export class NhanVienService extends PrismaCrudService {
       ...(data.email ? { email: data.email } : {}),
       ...(data.soDienThoai ? { soDienThoai: data.soDienThoai } : {}),
       ...(data.chucVu ? { chucVu: data.chucVu } : {}),
-      // Cập nhật Role
       ...(data.Role ? { Role: data.Role === 'admin' ? 'admin' : 'employee' } : {}),
     };
 
@@ -107,8 +107,19 @@ export class NhanVienService extends PrismaCrudService {
       data: payload 
     });
 
-    // 💡 BẢO MẬT: Loại bỏ mật khẩu trước khi trả về
     const { matKhau, ...safeResult } = result;
     return safeResult;
+  }
+
+  // ===============================================
+  // 2. GHI ĐÈ HÀM XÓA: CHUYỂN SANG XÓA MỀM
+  // ===============================================
+  async remove(id: string) {
+    // Không dùng .delete() để tránh lỗi khóa ngoại (Foreign key) với Khách hàng / BĐS
+    // Cập nhật trạng thái isDeleted = true
+    return this.prisma.nhanVien.update({
+      where: { id },
+      data: { isDeleted: true },
+    });
   }
 }

@@ -12,6 +12,7 @@ import { JwtAuthGuard } from './common/guards/jwt-auth.guard';
 import { RolesGuard } from './common/guards/roles.guard';
 import { BieuMauModule } from './bieu-mau/bieu-mau.module';
 import { ThongKeModule } from './thong-ke/thong-ke.module';
+import { NhuCauModule } from './nhu-cau/nhu-cau.module';
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
@@ -25,6 +26,7 @@ import { ThongKeModule } from './thong-ke/thong-ke.module';
     PublicApiModule,
     BieuMauModule,
     ThongKeModule,
+    NhuCauModule,
   ],
   providers: [JwtAuthGuard, RolesGuard],
 })
