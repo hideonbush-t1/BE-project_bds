@@ -27,12 +27,6 @@ import { UpdateBatDongSanDto } from './dto/update-bat-dong-san.dto';
 export class BatDongSanController {
   constructor(private readonly service: BatDongSanService) {}
 
-  // Endpoint lọc (Đặt ở trên cùng để tránh bị nhầm với :id)
-  @Get('filter')
-  async filter(@Query('loaiBDS') loaiBDS: string, @Query('viTri') viTri: string) {
-    return this.service.filter(loaiBDS, viTri);
-  }
-
   @Get()
   findAll() {
     return this.service.findAll();
@@ -94,7 +88,7 @@ export class BatDongSanController {
   @UseInterceptors(
     FilesInterceptor('images', 10, { 
       storage: memoryStorage(),
-      limits: { fileSize: 20 * 1024 * 1024 } // Giới hạn an toàn toàn cục 20MB để chống nghẽn RAM
+limits: { fileSize: 20 * 1024 * 1024 } // Giới hạn an toàn toàn cục 20MB để chống nghẽn RAM
     })
   ) 
   create(
