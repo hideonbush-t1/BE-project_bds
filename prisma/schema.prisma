@@ -1,0 +1,164 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model NhanVien {
+  id           String      @id @map("MaNV") @db.VarChar(5)
+  matKhau      String      @map("MatKhau") @db.VarChar(255)
+  hoTen        String      @map("TenNV") @db.VarChar(45)
+  diaChi       String      @map("DiaChi") @db.VarChar(100)
+  gioiTinh     String      @map("GioiTinh") @db.VarChar(10)
+  ngaySinh     DateTime    @map("NgaySinh") @db.Date
+  chucVu       String      @map("ChucVu") @db.VarChar(50)
+  soDienThoai  String      @map("SoDienThoai") @db.VarChar(12)
+  email        String      @map("Email") @db.VarChar(50)
+  tenDangNhap  String?     @map("TenDangNhap") @db.VarChar(50)
+  anhDaiDien   String?     @map("AnhDaiDien") @db.VarChar(255)
+  isDeleted    Boolean?    @default(false) @map("IsDeleted")
+  ngayTao      DateTime?   @default(now()) @map("NgayTao") @db.DateTime(0)
+  Role         String       @map("Role") @db.VarChar(20)
+  giaoDiches   GiaoDich[]  @relation("NhanVienGiaoDich")
+  khachhang    KhachHang[]
+  thongBaos    ThongBao[]  @relation("NhanVienThongBao")
+
+  @@map("nhanvien")
+}
+
+model KhachHang {
+  id               String       @id @map("MaKH") @db.VarChar(20)
+  loaiKH           String       @map("LoaiKH") @db.VarChar(20)
+  hoTen            String       @map("TenKH") @db.VarChar(50)
+  gioiTinh         String       @map("GioiTinh") @db.VarChar(10)
+  ngaySinh         DateTime     @map("NgaySinh") @db.Date
+  diaChi           String       @map("DiaChi") @db.VarChar(100)
+  soDienThoai      String       @map("SoDienThoai") @db.VarChar(12)
+  email            String?      @map("Email") @db.VarChar(50)
+  nhanVienId       String?      @map("MaNVQL") @db.VarChar(5)
+  isDeleted        Boolean?     @default(false) @map("IsDeleted")
+  ngayTao          DateTime?    @default(now()) @map("NgayTao") @db.DateTime(0)
+  soCMND           String?      @map("SoCMND") @db.VarChar(20)
+  batDongSans      BatDongSan[]
+  benMuaGiaoDiches GiaoDich[]   @relation("BenMua")
+  nhanvien         NhanVien?    @relation(fields: [nhanVienId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "khachhang_ibfk_1")
+  nhuCaus          NhuCau[]
+
+  @@index([nhanVienId], map: "MaNVQL")
+  @@map("khachhang")
+}
+
+model NhuCau {
+  id          String    @id @map("MaNC") @db.VarChar(20)
+  khachHangId String    @map("MaKH") @db.VarChar(20)
+  loaiNC      String    @map("LoaiNC") @db.VarChar(50)
+  loaiBDS     String    @map("LoaiBDS") @db.VarChar(50)
+  viTri       String    @map("ViTri") @db.VarChar(100)
+  dienTichMin Float?    @map("DienTichMin") @db.Float
+  dienTichMax Float?    @map("DienTichMax") @db.Float
+  ghiChu      String?   @map("GhiChu") @db.VarChar(255)
+  isDeleted   Boolean?  @default(false) @map("IsDeleted")
+  khachHang   KhachHang @relation(fields: [khachHangId], references: [id], onUpdate: Restrict, map: "FK_NC_KH")
+
+  @@index([khachHangId], map: "MaKH")
+  @@map("nhucau")
+}
+
+model BatDongSan {
+  id          String       @id @map("MaBDS") @db.VarChar(20)
+  khachHangId String       @map("MaKH") @db.VarChar(20)
+  nhuCau      String?      @map("NhuCau") @db.VarChar(50)
+  tieuDe      String?      @map("TieuDe") @db.VarChar(255)
+  loaiBDS     String       @map("LoaiBDS") @db.VarChar(50)
+  diaChi      String       @map("DiaChi") @db.VarChar(100)
+  dienTich    Float        @map("DienTich") @db.Float
+  giaTien     Decimal      @map("GiaTien") @db.Decimal(15, 2)
+  tinhTrang   String       @map("TinhTrang") @db.VarChar(50)
+  isDeleted   Boolean?     @default(false) @map("IsDeleted")
+  ngayTao     DateTime?    @default(now()) @map("NgayTao") @db.DateTime(0)
+  ngayCapNhat DateTime?    @default(now()) @updatedAt @map("NgayCapNhat") @db.DateTime(0)
+  viTri       String?      @map("ViTri") @db.VarChar(100)
+  huong       String?      @map("Huong") @db.VarChar(50)
+  ghiChu      String?      @map("GhiChu") @db.LongText
+  khachHang   KhachHang    @relation(fields: [khachHangId], references: [id], onUpdate: Restrict, map: "FK_BDS_KH")
+  chiTiet     ChiTietBDS?
+  giaoDiches  GiaoDich[]
+  hinhAnhs    HinhAnhBDS[]
+
+  @@index([khachHangId], map: "MaKH")
+  @@map("batdongsan")
+}
+
+model ChiTietBDS {
+  id          String     @id @map("MaBDS") @db.VarChar(20)
+  viTri       String?    @map("ViTri") @db.VarChar(50)
+  huong       String?    @map("Huong") @db.VarChar(20)
+  soPhongNgu  Int?       @map("SoPhongNgu")
+  soToilet    Int?       @map("SoToilet")
+  soTang      Int?       @map("SoTang")
+  matTien     Float?     @map("MatTien") @db.Float
+  duongVao    Float?     @map("DuongVao") @db.Float
+  phapLy      String?    @map("PhapLy") @db.VarChar(100)
+  moTa        String?    @map("MoTa") @db.LongText
+  ghiChu      String?    @map("GhiChu") @db.LongText
+  batDongSan  BatDongSan @relation(fields: [id], references: [id], onUpdate: Restrict, map: "FK_CTBDS_BDS")
+
+  @@map("chitietbds")
+}
+
+model HinhAnhBDS {
+  id           Int        @id @map("MaHinhAnh")
+  batDongSanId String     @map("MaBDS") @db.VarChar(20)
+  duongDan     String     @map("DuongDan") @db.VarChar(255)
+  anhDaiDien   Boolean?   @default(false) @map("AnhDaiDien")
+  batDongSan   BatDongSan @relation(fields: [batDongSanId], references: [id], onUpdate: Restrict, map: "FK_HINHANH_BDS")
+
+  @@index([batDongSanId], map: "MaBDS")
+  @@map("hinhanhbds")
+}
+
+model GiaoDich {
+  id                String     @id @map("MaGD") @db.VarChar(20)
+  nhanVienId        String     @map("MaNVGD") @db.VarChar(5)
+  benMua            String     @map("BenMua") @db.VarChar(20)
+  benBan            String?    @map("BenBan") @db.VarChar(100)
+  batDongSanId      String     @map("MaBDS") @db.VarChar(20)
+  soTien            Decimal    @map("SoTien") @db.Decimal(15, 2)
+  ngayGD            DateTime   @map("NgayGD") @db.Date
+  tyLeHoaHong       Float      @map("TyLeHoaHong") @db.Float
+  moTaGD            String?    @map("MoTaGD") @db.LongText
+  tinhTrang         String     @map("TinhTrang") @db.VarChar(50)
+  isDeleted         Boolean?   @default(false) @map("IsDeleted")
+  ngayTao           DateTime?  @default(now()) @map("NgayTao") @db.DateTime(0)
+  batDongSan        BatDongSan @relation(fields: [batDongSanId], references: [id], onUpdate: Restrict, map: "FK_GD_BDS")
+  benMuaKhachHang   KhachHang  @relation("BenMua", fields: [benMua], references: [id], onUpdate: Restrict, map: "FK_GD_KH")
+  nhanVien          NhanVien   @relation("NhanVienGiaoDich", fields: [nhanVienId], references: [id], onUpdate: Restrict, map: "FK_GD_NV")
+
+  @@index([benMua], map: "BenMua")
+  @@index([batDongSanId], map: "MaBDS")
+  @@index([nhanVienId], map: "MaNVGD")
+  @@map("giaodich")
+}
+
+model ThongBao {
+  id         Int       @id @default(autoincrement()) @map("MaTB")
+  tieuDe     String    @map("TenTB") @db.VarChar(255)
+  noiDung    String    @map("NoiDungTB") @db.LongText
+  ngayDang   DateTime  @map("Ngay") @db.Date
+  nhanVienId String?   @map("MaNV") @db.VarChar(5)
+  isDeleted  Boolean?  @default(false) @map("IsDeleted")
+  nhanVien   NhanVien? @relation("NhanVienThongBao", fields: [nhanVienId], references: [id], onDelete: Restrict, onUpdate: Restrict, map: "FK_TB_NV")
+
+  @@index([nhanVienId], map: "MaNV")
+  @@map("thongbao")
+}
+
+model hosobieumau {
+  MaHoSo   Int    @id @default(autoincrement())
+  TenHoSo  String @db.VarChar(150)
+  NoiDung  String? @db.LongText
+  DuongDan String @db.VarChar(255)
+}
