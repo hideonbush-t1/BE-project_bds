@@ -14,66 +14,68 @@ import { RolesGuard } from '../common/guards/roles.guard';
 import { BieuMauService } from './bieu-mau.service';
 import { CreateBieuMauDto } from './dto/create-bieu-mau.dto';
 
+// --- BỘ LỌC ĐỊNH DẠNG FILE ---
+const documentFileFilter = (req: any, file: Express.Multer.File, cb: any) => {
+  const allowedMimeTypes = [
+    'application/pdf', 
+    'application/msword', // .doc
+    'application/vnd.openxmlformats-officedocument.wordprocessingml.document' // .docx
+  ];
+  
+  if (allowedMimeTypes.includes(file.mimetype)) {
+    cb(null, true);
+  } else {
+    cb(new BadRequestException('Bảo mật: Chỉ cho phép tải lên file PDF hoặc Word (.doc, .docx)!'), false);
+  }
+};
+
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('ho-so-bieu-mau')
 export class BieuMauController {
   constructor(private readonly service: BieuMauService) {}
 
-  // ==========================================
-  // 1. LẤY DANH SÁCH BIỂU MẪU
-  // ==========================================
   @Get()
   @Roles('admin', 'employee')
   findAll() {
     return this.service.findAll();
   }
 
-  // ==========================================
-  // 2. LẤY CHI TIẾT 1 BIỂU MẪU
-  // ==========================================
   @Get(':id')
   @Roles('admin')
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
-  // ==========================================
-  // 3. THÊM BIỂU MẪU (LƯU LÊN CLOUDINARY)
-  // ==========================================
+  // THÊM BIỂU MẪU (Đã áp dụng bảo mật Upload)
   @Post()
   @Roles('admin')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
+      fileFilter: documentFileFilter, // Gọi bộ lọc ở đây
     }),
   )
   async create(
     @Body() dto: CreateBieuMauDto,
     @UploadedFile() file: Express.Multer.File,
   ) {
-    if (!file) {
-      throw new BadRequestException('Vui lòng đính kèm file!');
-    }
+    if (!file) throw new BadRequestException('Vui lòng đính kèm file!');
     return this.service.createBieuMau(dto, file);
   }
 
-  // ==========================================
-  // 4. XÓA BIỂU MẪU
-  // ==========================================
   @Delete(':id')
   @Roles('admin')
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id); 
   }
 
-  // ==========================================
-  // 5. CẬP NHẬT BIỂU MẪU (SỬA)
-  // ==========================================
+  // CẬP NHẬT BIỂU MẪU (Đã áp dụng bảo mật Upload)
   @Put(':id')
   @Roles('admin')
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
+      fileFilter: documentFileFilter, // Gọi bộ lọc ở đây
     }),
   )
   async update(
@@ -84,20 +86,11 @@ export class BieuMauController {
     return this.service.updateBieuMau(id, dto, file);
   }
 
-  // ==========================================
-  // 6. TẢI FILE VỀ MÁY (ÉP DOWNLOAD)
-  // ==========================================
   @Get('download/:id')
   @Roles('admin', 'employee')
-  async downloadFile(
-    @Param('id', ParseIntPipe) id: number,
-    @Res() res: Response,
-  ) {
+  async downloadFile(@Param('id', ParseIntPipe) id: number, @Res() res: Response) {
     const bieuMau = await this.service.getFileForDownload(id);
-
-    if (!bieuMau.DuongDan) {
-      throw new BadRequestException('Hồ sơ biểu mẫu này chưa có file đính kèm.');
-    }
+    if (!bieuMau.DuongDan) throw new BadRequestException('Hồ sơ biểu mẫu này chưa có file đính kèm.');
 
     const ext = bieuMau.DuongDan.split('.').pop() || 'pdf';
     const safeFileName = `${bieuMau.TenHoSo.replace(/\s+/g, '_')}.${ext}`;
@@ -107,7 +100,7 @@ export class BieuMauController {
       res.setHeader('Content-Type', 'application/octet-stream');
       fileStream.pipe(res);
     }).on('error', () => {
-      throw new BadRequestException('Không thể kết nối đến máy chủ Cloudinary để tải file');
+      throw new BadRequestException('Không thể kết nối đến máy chủ Cloudinary');
     });
   }
 }
