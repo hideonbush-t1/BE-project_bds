@@ -1,4 +1,4 @@
-import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable, ForbiddenException, UnauthorizedException } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { ROLES_KEY, RoleType } from '../decorators/roles.decorator';
 import { JwtPayload } from '../interfaces/jwt-payload.interface';
@@ -13,30 +13,31 @@ export class RolesGuard implements CanActivate {
       context.getClass(),
     ]);
 
+    // Nếu API không gắn @Roles() thì ai cũng vào được (Miễn là có token)
     if (!requiredRoles || requiredRoles.length === 0) return true;
 
-    const request = context.switchToHttp().getRequest<{ user?: JwtPayload & { role?: string } }>();
+    const request = context.switchToHttp().getRequest<{ user?: JwtPayload & { role?: string, Role?: string } }>();
     const user = request.user;
 
-    // 💡 ĐÃ SỬA: Bắt cả Role (hoa) và role (thường)
+    // 💡 TỐI ƯU 1: Bắn lỗi rõ ràng nếu mất quyền / mất token
     if (!user || (!user.Role && !user.role)) {
-      console.log('RolesGuard: User hoặc Role bị thiếu. Dữ liệu user:', user);
-      return false;
+      console.error('RolesGuard: User hoặc Role bị thiếu. Dữ liệu user:', user);
+      throw new UnauthorizedException('Không tìm thấy quyền hạn của bạn. Vui lòng đăng nhập lại!');
     }
 
-    // 💡 ĐÃ SỬA: Gom dữ liệu linh hoạt
     const userRole = String(user.Role || user.role).toLowerCase().trim();
 
-    // Kiểm tra quyền: Admin được vào mọi nơi, còn lại phải khớp
     const hasRole = requiredRoles.some((role) => {
-      if (userRole === 'admin') return true; // Admin là "chúa tể"
+      if (userRole === 'admin') return true; // Admin được cấp quyền tối thượng (God Mode)
       return role.toLowerCase() === userRole;
     });
 
+    // 💡 TỐI ƯU 2: Quăng lỗi 403 tiếng Việt nếu vi phạm
     if (!hasRole) {
-      console.log(`RolesGuard: Từ chối truy cập. Role thực tế: ${userRole}, Yêu cầu: ${requiredRoles}`);
+      console.warn(`RolesGuard: Từ chối truy cập. Role thực tế: ${userRole}, Yêu cầu: ${requiredRoles}`);
+      throw new ForbiddenException('Bạn không có quyền thực hiện hành động này!');
     }
 
-    return hasRole;
+    return true;
   }
 }

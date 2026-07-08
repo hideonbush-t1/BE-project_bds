@@ -44,38 +44,40 @@ export class KhachHangService extends PrismaCrudService {
     return khachHang;
   }
 
-  /**
-   * Thêm mới khách hàng với cơ chế chặn trùng lặp
-   * Đã xử lý lỗi Foreign Key Constraint cho nhanVienId
-   */
+  // 3. Thêm mới
   async create(data: CreateKhachHangDto) {
-    // 1. Kiểm tra trùng mã Khách hàng (id)
-    const existingKH = await this.prisma.khachHang.findUnique({
-      where: { id: data.maKH }
+    // Sinh mã KH
+    const lastCustomer = await this.prisma.khachHang.findMany({
+      orderBy: { id: 'desc' },
+      take: 1
     });
-    if (existingKH) {
-      throw new ConflictException(`Mã khách hàng ${data.maKH} đã tồn tại!`);
+
+    let newId = 'KH001';
+    if (lastCustomer.length > 0) {
+      const lastId = lastCustomer[0].id;
+      const currentNum = parseInt(lastId.replace('KH', ''));
+      newId = `KH${(currentNum + 1).toString().padStart(3, '0')}`;
     }
 
-    // 2. Kiểm tra trùng số CMND/CCCD
+    // Kiểm tra trùng CMND
     if (data.soCMND) {
       const existingCMND = await this.prisma.khachHang.findFirst({
         where: { soCMND: data.soCMND, isDeleted: false }
       });
-      if (existingCMND) {
-        throw new ConflictException(`Số CMND/CCCD ${data.soCMND} đã được sử dụng bởi khách hàng khác!`);
-      }
+      if (existingCMND) throw new ConflictException(`Số CMND/CCCD ${data.soCMND} đã được sử dụng!`);
     }
 
-    // 3. Xử lý logic nhanVienId để tránh lỗi Foreign Key
-    const finalNhanVienId = (data.nhanVienId && data.nhanVienId !== 'NV_CHUA_XAC_DINH') 
-                            ? data.nhanVienId 
-                            : null;
+    // Kiểm tra trùng Email
+    if (data.email) {
+      const existingEmail = await this.prisma.khachHang.findFirst({
+        where: { email: data.email, isDeleted: false }
+      });
+      if (existingEmail) throw new ConflictException(`Email ${data.email} đã được sử dụng!`);
+    }
 
-    // 4. Lưu vào DB
     return await this.prisma.khachHang.create({
       data: {
-        id: data.maKH,
+        id: newId,
         loaiKH: data.loaiKH,
         hoTen: data.hoTen,
         gioiTinh: data.gioiTinh ?? 'Khác',
@@ -83,7 +85,7 @@ export class KhachHangService extends PrismaCrudService {
         diaChi: data.diaChi ?? '',
         soDienThoai: data.soDienThoai ?? '',
         email: data.email ?? null,
-        nhanVienId: finalNhanVienId,
+        nhanVienId: (data.nhanVienId && data.nhanVienId !== 'NV_CHUA_XAC_DINH') ? data.nhanVienId : null,
         isDeleted: false,
         ngayTao: new Date(),
         soCMND: data.soCMND ?? null,
@@ -91,61 +93,62 @@ export class KhachHangService extends PrismaCrudService {
     });
   }
 
-  /**
-   * Chỉnh sửa thông tin khách hàng
-   */
+  // 4. Cập nhật
   async update(id: string, data: UpdateKhachHangDto) {
-    // 1. Kiểm tra trùng CMND khi cập nhật
+    // Kiểm tra trùng CMND (bỏ qua bản ghi hiện tại)
     if (data.soCMND) {
       const existingCMND = await this.prisma.khachHang.findFirst({
-        where: { 
-          soCMND: data.soCMND, 
-          isDeleted: false,
-          NOT: { id: id } 
-        }
+        where: { soCMND: data.soCMND, isDeleted: false, NOT: { id: id } }
       });
-      if (existingCMND) {
-        throw new ConflictException(`Số CMND/CCCD ${data.soCMND} đã được sử dụng bởi khách hàng khác!`);
-      }
+      if (existingCMND) throw new ConflictException(`Số CMND/CCCD ${data.soCMND} đã được sử dụng!`);
     }
 
-    // Tách dữ liệu
-    const { maKH, ...updateFields } = data as any;
+    // Kiểm tra trùng Email (bỏ qua bản ghi hiện tại)
+    if (data.email) {
+      const existingEmail = await this.prisma.khachHang.findFirst({
+        where: { email: data.email, isDeleted: false, NOT: { id: id } }
+      });
+      if (existingEmail) throw new ConflictException(`Email ${data.email} đã được sử dụng!`);
+    }
 
-    // 2. Thực hiện cập nhật
     return await this.prisma.khachHang.update({
       where: { id },
       data: {
-        ...updateFields,
+        ...data,
         ...(data.ngaySinh && { ngaySinh: new Date(data.ngaySinh) }),
       },
     });
   }
 
-  // 5. Xóa
   override async remove(id: string): Promise<any> {
+    // 💡 1. KIỂM TRA SỰ TỒN TẠI TRƯỚC KHI XÓA
+    const khachHang = await this.prisma.khachHang.findUnique({
+      where: { id: id }
+    });
+
+    if (!khachHang) {
+      throw new NotFoundException(`Không tìm thấy khách hàng có mã: ${id}`);
+    }
+
+    // 2. Kiểm tra khóa ngoại
     const bdsCount = await this.prisma.batDongSan.count({
       where: { khachHangId: id, isDeleted: false }
     });
-
     if (bdsCount > 0) {
       throw new ConflictException("Không thể xóa! Khách hàng này đang sở hữu bất động sản.");
     }
 
+    // 3. Tiến hành xóa an toàn
     return await this.prisma.khachHang.delete({
       where: { id },
     });
   }
 
   async findNhuCauByKhachHang(khachHangId: string) {
-    return await this.prisma.nhuCau.findMany({
-      where: { khachHangId, isDeleted: false },
-    });
+    return await this.prisma.nhuCau.findMany({ where: { khachHangId, isDeleted: false } });
   }
 
   async findBatDongSanByKhachHang(khachHangId: string) {
-    return await this.prisma.batDongSan.findMany({
-      where: { khachHangId, isDeleted: false },
-    });
+    return await this.prisma.batDongSan.findMany({ where: { khachHangId, isDeleted: false } });
   }
 }

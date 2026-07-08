@@ -5,6 +5,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
+@Roles('admin') // 🔒 TỐI ƯU: Gắn thẳng 'admin' lên đây để KHÓA TOÀN BỘ file này
 @Controller('thong-ke')
 export class ThongKeController {
   constructor(private readonly service: ThongKeService) {}

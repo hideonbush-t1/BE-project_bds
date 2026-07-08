@@ -35,20 +35,20 @@ export class BieuMauController {
   constructor(private readonly service: BieuMauService) {}
 
   @Get()
-  @Roles('admin', 'employee')
+  @Roles('employee') // 💡 TỐI ƯU: Đổi thành 'employee', Admin sẽ tự động vào được
   findAll() {
     return this.service.findAll();
   }
 
   @Get(':id')
-  @Roles('admin')
+  @Roles('employee') // 💡 SỬA LỖI LOGIC: Cho phép nhân viên xem chi tiết biểu mẫu
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
 
   // THÊM BIỂU MẪU (Đã áp dụng bảo mật Upload)
   @Post()
-  @Roles('admin')
+  @Roles('admin') // 🔒 CHUẨN: Chỉ Admin mới được đăng biểu mẫu mới
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -64,14 +64,14 @@ export class BieuMauController {
   }
 
   @Delete(':id')
-  @Roles('admin')
+  @Roles('admin') // 🔒 CHUẨN: Chỉ Admin mới được xóa
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id); 
   }
 
   // CẬP NHẬT BIỂU MẪU (Đã áp dụng bảo mật Upload)
   @Put(':id')
-  @Roles('admin')
+  @Roles('admin') // 🔒 CHUẨN: Chỉ Admin mới được sửa nội dung biểu mẫu
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),

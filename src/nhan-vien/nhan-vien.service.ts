@@ -32,19 +32,17 @@ export class NhanVienService extends PrismaCrudService {
       ngayTao: true
     };
 
-    // Nếu không có tìm kiếm
     if (!search) {
       return this.prisma.nhanVien.findMany({
-        where: { isDeleted: false }, // 💡 BẮT BUỘC: Chỉ lấy NV chưa bị xóa
+        where: { isDeleted: false }, 
         orderBy: { ngayTao: 'desc' },
         select: safeSelect,
       });
     }
 
-    // Nếu có tìm kiếm
     return this.prisma.nhanVien.findMany({
       where: {
-        isDeleted: false, // 💡 BẮT BUỘC: Chỉ tìm trong những NV chưa bị xóa
+        isDeleted: false, 
         OR: [
           { id: { contains: search } },
           { hoTen: { contains: search } },
@@ -57,17 +55,27 @@ export class NhanVienService extends PrismaCrudService {
     });
   }
 
+  // ===============================================
+  // 2. THÊM MỚI (Tự động sinh mã để không bị trùng)
+  // ===============================================
   async create(data: CreateNhanVienDto) {
-    const existingNV = await this.prisma.nhanVien.findUnique({
-      where: { id: data.maNV }
+    // 💡 Backend tự động tìm mã NV lớn nhất hiện tại
+    const lastNV = await this.prisma.nhanVien.findFirst({
+      orderBy: { id: 'desc' }, 
     });
-    if (existingNV) {
-      throw new BadRequestException('Mã nhân viên này đã tồn tại, vui lòng nhập mã khác!');
+
+    let newId = 'NV001';
+    if (lastNV && lastNV.id) {
+      const lastNumber = parseInt(lastNV.id.replace('NV', ''), 10);
+      if (!isNaN(lastNumber)) {
+        newId = `NV${(lastNumber + 1).toString().padStart(3, '0')}`;
+      }
     }
 
+    // 💡 Lưu DB với mã newId vừa được tự động sinh ra
     const result = await this.prisma.nhanVien.create({
       data: {
-        id: data.maNV,
+        id: newId, 
         hoTen: data.hoTen,
         diaChi: '',
         gioiTinh: 'Khac',
@@ -76,7 +84,7 @@ export class NhanVienService extends PrismaCrudService {
         soDienThoai: data.soDienThoai ?? '',
         email: data.email,
         Role: data.Role === 'admin' ? 'admin' : 'employee', 
-        tenDangNhap: data.maNV,
+        tenDangNhap: newId, // Đổi tên đăng nhập thành mã mới luôn
         anhDaiDien: null,
         isDeleted: false,
         ngayTao: new Date(),
@@ -112,14 +120,12 @@ export class NhanVienService extends PrismaCrudService {
   }
 
   // ===============================================
-  // 2. GHI ĐÈ HÀM XÓA: CHUYỂN SANG XÓA MỀM
+  // 3. XÓA CỨNG (XÓA BỐC HƠI KHỎI DATABASE)
   // ===============================================
   async remove(id: string) {
-    // Không dùng .delete() để tránh lỗi khóa ngoại (Foreign key) với Khách hàng / BĐS
-    // Cập nhật trạng thái isDeleted = true
-    return this.prisma.nhanVien.update({
+    // 💡 Đổi thành .delete() để xóa sạch sẽ khỏi DB
+    return this.prisma.nhanVien.delete({
       where: { id },
-      data: { isDeleted: true },
     });
   }
 }

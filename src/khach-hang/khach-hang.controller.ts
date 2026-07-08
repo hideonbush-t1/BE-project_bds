@@ -17,8 +17,7 @@ import { UpdateKhachHangDto } from './dto/update-khach-hang.dto';
 import { KhachHangService } from './khach-hang.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-// Đảm bảo @Roles bao gồm cả 'admin' và 'employee' để cả 2 đều có quyền truy cập
-@Roles('admin', 'employee')
+@Roles('employee') // 💡 TỐI ƯU: Rút gọn code, cả Employee và Admin đều vào được
 @Controller('khach-hang')
 export class KhachHangController {
   constructor(private readonly service: KhachHangService) {}
@@ -43,6 +42,8 @@ export class KhachHangController {
     return this.service.update(id, dto);
   }
 
+  // 💡 NÂNG CẤP BẢO MẬT: Xóa khách hàng là hành động phá hủy dữ liệu, chỉ Admin được phép
+  @Roles('admin')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);
