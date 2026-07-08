@@ -15,18 +15,21 @@ export class NhuCauService extends PrismaCrudService {
     return this.prisma.nhuCau;
   }
 
-  create(data: CreateNhuCauDto) {
+  async create(data: CreateNhuCauDto) {
     return this.prisma.nhuCau.create({
       data: {
-        id: `NC${Date.now()}`.slice(0, 20),
+        id: `NC${Date.now()}`.slice(0, 10),
         khachHangId: data.khachHangId,
-        loaiNC: data.loaiNhuCau,
-        loaiBDS: data.loaiBDS,
-        viTri: data.viTri,
-        dienTichMin: data.dienTichMin,
-        dienTichMax: data.dienTichMax,
+        nhanVienId: data.nhanVienId,
+
+        loaiNC: data.loaiNhuCau || '', 
+        loaiBDS: data.loaiBDS || '',
+        viTri: data.viTri || '',
+        
+        dienTichMin: data.dienTichMin ? Number(data.dienTichMin) : null,
+        dienTichMax: data.dienTichMax ? Number(data.dienTichMax) : null,
         ghiChu: data.ghiChu,
-        isDeleted: false,
+        tinhTrang: data.tinhTrang || 'Đang tìm kiếm',
       },
     });
   }
@@ -36,12 +39,14 @@ export class NhuCauService extends PrismaCrudService {
       where: { id },
       data: {
         ...(data.khachHangId ? { khachHangId: data.khachHangId } : {}),
+        ...(data.nhanVienId ? { nhanVienId: data.nhanVienId } : {}), // Thêm dòng này để Admin sửa được nhân viên
         ...(data.loaiNhuCau ? { loaiNC: data.loaiNhuCau } : {}),
         ...(data.loaiBDS ? { loaiBDS: data.loaiBDS } : {}),
         ...(data.viTri ? { viTri: data.viTri } : {}),
         ...(data.dienTichMin !== undefined ? { dienTichMin: data.dienTichMin } : {}),
         ...(data.dienTichMax !== undefined ? { dienTichMax: data.dienTichMax } : {}),
         ...(data.ghiChu ? { ghiChu: data.ghiChu } : {}),
+        ...(data.tinhTrang ? { tinhTrang: data.tinhTrang } : {}), 
       },
     });
   }

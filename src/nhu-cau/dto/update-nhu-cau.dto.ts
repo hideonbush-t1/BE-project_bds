@@ -5,6 +5,11 @@ export class UpdateNhuCauDto {
   @IsString()
   khachHangId?: string;
 
+  // Thêm nhanVienId để đồng bộ với CreateDto
+  @IsOptional()
+  @IsString()
+  nhanVienId?: string;
+
   @IsOptional()
   @IsString()
   loaiNhuCau?: string;
@@ -34,4 +39,9 @@ export class UpdateNhuCauDto {
   @IsOptional()
   @IsString()
   ghiChu?: string;
+
+  // ĐÂY LÀ DÒNG CHỐT HẠ ĐỂ MỞ KHÓA UPDATE TRẠNG THÁI:
+  @IsOptional()
+  @IsString()
+  tinhTrang?: string;
 }
