@@ -124,6 +124,16 @@ export class KhachHangService extends PrismaCrudService {
 
   // 5. Xóa
   override async remove(id: string): Promise<any> {
+    // 💡 1. KIỂM TRA SỰ TỒN TẠI TRƯỚC KHI XÓA
+    const khachHang = await this.prisma.khachHang.findUnique({
+      where: { id: id }
+    });
+
+    if (!khachHang) {
+      throw new NotFoundException(`Không tìm thấy khách hàng có mã: ${id}`);
+    }
+
+    // 2. Kiểm tra khóa ngoại
     const bdsCount = await this.prisma.batDongSan.count({
       where: { khachHangId: id, isDeleted: false }
     });
@@ -132,6 +142,7 @@ export class KhachHangService extends PrismaCrudService {
       throw new ConflictException("Không thể xóa! Khách hàng này đang sở hữu bất động sản.");
     }
 
+    // 3. Tiến hành xóa an toàn
     return await this.prisma.khachHang.delete({
       where: { id },
     });
