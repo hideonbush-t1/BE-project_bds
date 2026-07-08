@@ -90,7 +90,19 @@ model BatDongSan {
   giaoDiches  GiaoDich[]
   hinhAnhs    HinhAnhBDS[]
 
+  // Khóa ngoại mặc định
   @@index([khachHangId], map: "MaKH")
+  
+  // TỐI ƯU HIỆU NĂNG: Đánh chỉ mục đơn bám sát 5 tiêu chí tìm kiếm thực tế
+  @@index([loaiBDS], map: "Idx_LoaiBDS")
+  @@index([viTri], map: "Idx_ViTri")
+  @@index([diaChi], map: "Idx_DiaChi")
+  @@index([giaTien], map: "Idx_GiaTien")
+  @@index([huong], map: "Idx_Huong")
+
+  // TỐI ƯU HIỆU NĂNG: Đánh chỉ mục kết hợp (Composite) cho trường hợp khách hàng lọc nhiều điều kiện cùng lúc (VD: Tìm Căn hộ + ở Quận 1 + Giá < 3 tỷ)
+  @@index([loaiBDS, viTri, giaTien], map: "Idx_BoLoc_Loai_ViTri_Gia")
+
   @@map("batdongsan")
 }
 

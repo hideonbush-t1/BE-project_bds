@@ -14,6 +14,7 @@ import {
 } from '@nestjs/common';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import { memoryStorage } from 'multer';
+import { CacheInterceptor } from '@nestjs/cache-manager'; // <-- Tích hợp thư viện Cache
 import { Roles } from '../common/decorators/roles.decorator';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -33,6 +34,7 @@ export class BatDongSanController {
   }
 
   @Get('search')
+  @UseInterceptors(CacheInterceptor) // <-- Bật Cache để tối ưu hiệu năng tìm kiếm
   search(
     @Query('loaiBDS') loaiBDS?: string,
     @Query('viTri') viTri?: string,
