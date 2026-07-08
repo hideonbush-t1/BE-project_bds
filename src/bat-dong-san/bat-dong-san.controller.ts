@@ -22,7 +22,7 @@ import { CreateBatDongSanDto } from './dto/create-bat-dong-san.dto';
 import { UpdateBatDongSanDto } from './dto/update-bat-dong-san.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'employee')
+@Roles('employee') // 💡 TỐI ƯU: Đặt quyền gốc là 'employee' (Admin sẽ tự động được vào nhờ God Mode)
 @Controller('bat-dong-san')
 export class BatDongSanController {
   constructor(private readonly service: BatDongSanService) {}
@@ -88,7 +88,7 @@ export class BatDongSanController {
   @UseInterceptors(
     FilesInterceptor('images', 10, { 
       storage: memoryStorage(),
-limits: { fileSize: 20 * 1024 * 1024 } // Giới hạn an toàn toàn cục 20MB để chống nghẽn RAM
+      limits: { fileSize: 20 * 1024 * 1024 } 
     })
   ) 
   create(
@@ -99,9 +99,7 @@ limits: { fileSize: 20 * 1024 * 1024 } // Giới hạn an toàn toàn cục 20MB
       throw new BadRequestException('Vui lòng tải lên ít nhất 1 hình ảnh hoặc video!');
     }
     
-    // Gọi hàm kiểm tra khắt khe
     this.validateFiles(files);
-    
     return this.service.create(dto, files);
   }
 
@@ -117,14 +115,14 @@ limits: { fileSize: 20 * 1024 * 1024 } // Giới hạn an toàn toàn cục 20MB
     @Body() dto: UpdateBatDongSanDto,
     @UploadedFiles() files?: Array<Express.Multer.File>
   ) {
-    // Nếu có gửi file mới lên thì mới kiểm tra
     if (files && files.length > 0) {
       this.validateFiles(files);
     }
-    
     return this.service.update(id, dto, files);
   }
 
+  // 💡 NÂNG CẤP BẢO MẬT: Ghi đè quyền cho hàm Xóa (Chỉ có Admin mới được xóa)
+  @Roles('admin') 
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

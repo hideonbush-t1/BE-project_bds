@@ -7,7 +7,7 @@ import { UpdateGiaoDichDto } from './dto/update-giao-dich.dto';
 import { GiaoDichService } from './giao-dich.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'employee')
+@Roles('employee') // 💡 TỐI ƯU: Đặt quyền gốc là 'employee' (Admin tự động pass)
 @Controller('giao-dich')
 export class GiaoDichController {
   constructor(private readonly service: GiaoDichService) {}
@@ -38,6 +38,8 @@ export class GiaoDichController {
     return this.service.update(id, dto);
   }
 
+  // 💡 NÂNG CẤP BẢO MẬT: Chỉ Admin mới được xóa lịch sử giao dịch
+  @Roles('admin')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

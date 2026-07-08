@@ -23,7 +23,7 @@ export class BieuMauController {
   // 1. LẤY DANH SÁCH BIỂU MẪU
   // ==========================================
   @Get()
-  @Roles('admin', 'employee')
+  @Roles('employee') // 💡 TỐI ƯU: Đổi thành 'employee', Admin sẽ tự động vào được
   findAll() {
     return this.service.findAll();
   }
@@ -32,7 +32,7 @@ export class BieuMauController {
   // 2. LẤY CHI TIẾT 1 BIỂU MẪU
   // ==========================================
   @Get(':id')
-  @Roles('admin')
+  @Roles('employee') // 💡 SỬA LỖI LOGIC: Cho phép nhân viên xem chi tiết biểu mẫu
   findOne(@Param('id', ParseIntPipe) id: number) {
     return this.service.findOne(id);
   }
@@ -41,7 +41,7 @@ export class BieuMauController {
   // 3. THÊM BIỂU MẪU (LƯU LÊN CLOUDINARY)
   // ==========================================
   @Post()
-  @Roles('admin')
+  @Roles('admin') // 🔒 CHUẨN: Chỉ Admin mới được đăng biểu mẫu mới
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -61,7 +61,7 @@ export class BieuMauController {
   // 4. XÓA BIỂU MẪU
   // ==========================================
   @Delete(':id')
-  @Roles('admin')
+  @Roles('admin') // 🔒 CHUẨN: Chỉ Admin mới được xóa
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.service.remove(id); 
   }
@@ -70,7 +70,7 @@ export class BieuMauController {
   // 5. CẬP NHẬT BIỂU MẪU (SỬA)
   // ==========================================
   @Put(':id')
-  @Roles('admin')
+  @Roles('admin') // 🔒 CHUẨN: Chỉ Admin mới được sửa nội dung biểu mẫu
   @UseInterceptors(
     FileInterceptor('file', {
       storage: memoryStorage(),
@@ -88,7 +88,7 @@ export class BieuMauController {
   // 6. TẢI FILE VỀ MÁY (ÉP DOWNLOAD)
   // ==========================================
   @Get('download/:id')
-  @Roles('admin', 'employee')
+  @Roles('employee') // 💡 TỐI ƯU: Nhân viên và Admin đều được phép tải file
   async downloadFile(
     @Param('id', ParseIntPipe) id: number,
     @Res() res: Response,

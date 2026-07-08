@@ -7,7 +7,7 @@ import { UpdateNhuCauDto } from './dto/update-nhu-cau.dto';
 import { NhuCauService } from './nhu-cau.service';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles('admin', 'employee')
+@Roles('employee') // 🔓 MỞ CỬA: Cả Employee và Admin đều làm việc được
 @Controller('nhu-cau')
 export class NhuCauController {
   constructor(private readonly service: NhuCauService) {}
@@ -32,6 +32,8 @@ export class NhuCauController {
     return this.service.update(id, dto);
   }
 
+  // 🔒 NÂNG CẤP BẢO MẬT: Chỉ Admin mới được Xóa nhu cầu
+  @Roles('admin')
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.service.remove(id);

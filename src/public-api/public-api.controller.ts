@@ -1,6 +1,7 @@
 import { Body, Controller, Get, Post } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 
+// 🔓 API PUBLIC: Không dùng Guard để khách vãng lai có thể xem trang chủ
 @Controller('public')
 export class PublicApiController {
   constructor(private readonly prisma: PrismaService) {}
@@ -25,12 +26,12 @@ export class PublicApiController {
     });
   }
 
+  // 💡 ĐÃ FIX BUG: Gọi đúng bảng chứa Biểu mẫu thay vì bảng thongBao
   @Get('ho-so-bieu-mau')
   findForms() {
-    return this.prisma.thongBao.findMany({
-      orderBy: { ngayDang: 'desc' },
+    return this.prisma.hosobieumau.findMany({
+      orderBy: { MaHoSo: 'desc' }, // Khóa chính của bạn là MaHoSo
       take: 10,
-      include: { nhanVien: true },
     });
   }
 
