@@ -10,25 +10,36 @@ import { RolesGuard } from '../common/guards/roles.guard';
 export class ThongKeController {
   constructor(private readonly service: ThongKeService) {}
 
-  @Get('chart')
-  getChartData(@Query('year') year: string) {
+  @Get('tong-quan-nam')
+  @Roles('admin')
+  getYearlySummary(
+    @Query('year') year: string,
+    @Query('period') period?: string,
+    @Query('nhanVienId') nhanVienId?: string
+  ) {
     const y = year ? parseInt(year) : new Date().getFullYear();
-    return this.service.getChartData(y);
+    return this.service.getYearlySummary(y, period, nhanVienId);
+  }
+
+  @Get('chart')
+  @Roles('admin')
+  getChartData(
+    @Query('year') year: string,
+    @Query('period') period?: string,
+    @Query('nhanVienId') nhanVienId?: string
+  ) {
+    const y = year ? parseInt(year) : new Date().getFullYear();
+    return this.service.getChartData(y, period, nhanVienId);
   }
 
   @Get('giao-dich')
+  @Roles('admin')
   getTableData(
-    @Query('month') month: string,
     @Query('year') year: string,
+    @Query('period') period?: string,
+    @Query('nhanVienId') nhanVienId?: string
   ) {
-    const m = month ? parseInt(month) : 0; // 0 = Lấy cả năm
     const y = year ? parseInt(year) : new Date().getFullYear();
-    return this.service.getTableData(m, y);
-  }
-
-  @Get('tong-quan-nam')
-  getYearlySummary(@Query('year') year: string) {
-    const y = year ? parseInt(year) : new Date().getFullYear();
-    return this.service.getYearlySummary(y);
+    return this.service.getTableData(y, period, nhanVienId);
   }
 }
