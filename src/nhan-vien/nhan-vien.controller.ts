@@ -7,7 +7,7 @@ import {
   Patch, 
   Post, 
   UseGuards,
-  Query // 💡 THÊM IMPORT Query Ở ĐÂY
+  Query
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../common/guards/roles.guard';
@@ -17,13 +17,11 @@ import { CreateNhanVienDto } from './dto/create-nhan-vien.dto';
 import { UpdateNhanVienDto } from './dto/update-nhan-vien.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
-// Mở rộng quyền cho cả 'admin' và 'employee' để tránh lỗi 403
-@Roles('admin', 'employee')
+@Roles('admin') // 🔒 ĐÓNG BĂNG: Chỉ có Admin mới có quyền Quản lý Nhân sự
 @Controller('nhan-vien')
 export class NhanVienController {
   constructor(private readonly service: NhanVienService) {}
 
-  // 💡 SỬA TẠI ĐÂY: Hứng tham số ?search=... từ Frontend
   @Get()
   findAll(@Query('search') search?: string) {
     return this.service.findAll(search);
