@@ -42,4 +42,17 @@ export class ThongKeController {
     const y = year ? parseInt(year) : new Date().getFullYear();
     return this.service.getTableData(y, period, nhanVienId);
   }
+
+  // 👇 THÊM MỚI: Endpoint Top Nhân viên
+  @Get('top-nhan-vien')
+  @Roles('admin')
+  getTopNhanVien(
+    @Query('year') year: string,
+    @Query('period') period?: string,
+    @Query('limit') limit?: string
+  ) {
+    const y = year ? parseInt(year) : new Date().getFullYear();
+    const l = limit ? parseInt(limit) : 10; // Mặc định lấy Top 10
+    return this.service.getTopNhanVien(y, period, l);
+  }
 }

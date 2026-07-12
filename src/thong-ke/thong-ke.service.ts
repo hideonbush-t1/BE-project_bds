@@ -39,7 +39,6 @@ export class ThongKeService {
     };
     if (isCompletedOnly) where.tinhTrang = 'Hoàn thành';
     
-    // FIX BUG PRISMA: Sử dụng đúng tên trường 'nhanVienId' và không dùng parseInt vì ID là chuỗi
     if (nhanVienId && nhanVienId !== 'all') {
       where.nhanVienId = nhanVienId; 
     }
@@ -88,9 +87,45 @@ export class ThongKeService {
       orderBy: { ngayGD: 'desc' },
       include: { 
         nhanVien: { select: { hoTen: true } },
-        // FIX BUG: Gọi thêm quan hệ batDongSan để lấy tên BĐS (giả định trường tên là tieuDe)
         batDongSan: { select: { tieuDe: true } } 
       }
     });
+  }
+
+  // 👇 THÊM MỚI: API Lấy Top Nhân Viên
+  async getTopNhanVien(year: number, period?: string, limit: number = 10) {
+    const giaoDichThanhCong = await this.prisma.giaoDich.findMany({
+      where: this.buildWhereClause(year, period, 'all', true),
+      include: { nhanVien: { select: { hoTen: true } } }
+    });
+
+    const mapData = new Map<string, any>();
+
+    giaoDichThanhCong.forEach((gd) => {
+      if (!gd.nhanVienId) return;
+      
+      const tien = Number(gd.soTien);
+      const doanhThu = tien * (gd.tyLeHoaHong / 100);
+
+      if (!mapData.has(gd.nhanVienId)) {
+        mapData.set(gd.nhanVienId, {
+          id: gd.nhanVienId,
+          hoTen: gd.nhanVien?.hoTen || 'Không xác định',
+          soGiaoDich: 0,
+          tongGiaTri: 0,
+          doanhThu: 0
+        });
+      }
+
+      const nv = mapData.get(gd.nhanVienId);
+      nv.soGiaoDich += 1;
+      nv.tongGiaTri += tien;
+      nv.doanhThu += doanhThu;
+    });
+
+    // Sắp xếp theo doanh thu giảm dần và lấy Top (limit)
+    return Array.from(mapData.values())
+      .sort((a, b) => b.doanhThu - a.doanhThu)
+      .slice(0, limit);
   }
 }
