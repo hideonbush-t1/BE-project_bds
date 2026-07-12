@@ -8,25 +8,26 @@ datasource db {
 }
 
 model NhanVien {
-  id           String      @id @map("MaNV") @db.VarChar(5)
-  matKhau      String      @map("MatKhau") @db.VarChar(255)
-  hoTen        String      @map("TenNV") @db.VarChar(45)
-  diaChi       String      @map("DiaChi") @db.VarChar(100)
-  gioiTinh     String      @map("GioiTinh") @db.VarChar(10)
-  ngaySinh     DateTime    @map("NgaySinh") @db.Date
-  chucVu       String      @map("ChucVu") @db.VarChar(50)
-  soDienThoai  String      @map("SoDienThoai") @db.VarChar(12)
-  email        String      @map("Email") @db.VarChar(50)
-  tenDangNhap  String?     @map("TenDangNhap") @db.VarChar(50)
-  anhDaiDien   String?     @map("AnhDaiDien") @db.VarChar(255)
-  isDeleted    Boolean?    @default(false) @map("IsDeleted")
-  ngayTao      DateTime?   @default(now()) @map("NgayTao") @db.DateTime(0)
-  Role         String      @default("employee") @map("Role") @db.VarChar(20)
+  id          String    @id @map("MaNV") @db.VarChar(5)
+  matKhau     String    @map("MatKhau") @db.VarChar(255)
+  hoTen       String    @map("TenNV") @db.VarChar(45)
+  diaChi      String    @map("DiaChi") @db.VarChar(100)
+  gioiTinh    String    @map("GioiTinh") @db.VarChar(10)
+  ngaySinh    DateTime  @map("NgaySinh") @db.Date
+  chucVu      String    @map("ChucVu") @db.VarChar(50)
+  soDienThoai String    @map("SoDienThoai") @db.VarChar(12)
+  email       String    @map("Email") @db.VarChar(50)
+  tenDangNhap String?   @map("TenDangNhap") @db.VarChar(50)
+  anhDaiDien  String?   @map("AnhDaiDien") @db.VarChar(255)
+  isDeleted   Boolean?  @default(false) @map("IsDeleted")
+  ngayTao     DateTime? @default(now()) @map("NgayTao") @db.DateTime(0)
+  Role        String    @default("employee") @map("Role") @db.VarChar(20)
 
   // Các quan hệ
-  giaoDiches   GiaoDich[]  @relation("NhanVienGiaoDich")
-  khachhang    KhachHang[]
-  thongBaos    ThongBao[]  @relation("NhanVienThongBao")
+  giaoDiches GiaoDich[]  @relation("NhanVienGiaoDich")
+  khachhang  KhachHang[]
+  thongBaos  ThongBao[]  @relation("NhanVienThongBao")
+  NhuCau     NhuCau[]
 
   @@map("nhanvien")
 }
@@ -64,7 +65,10 @@ model NhuCau {
   ghiChu      String?   @map("GhiChu") @db.VarChar(255)
   isDeleted   Boolean?  @default(false) @map("IsDeleted")
   khachHang   KhachHang @relation(fields: [khachHangId], references: [id], onUpdate: Restrict, map: "FK_NC_KH")
-
+  nhanVienId  String? // Hoặc Int? tùy thuộc vào kiểu ID của NhanVien
+  nhanVien    NhanVien? @relation(fields: [nhanVienId], references: [id])
+  tinhTrang    String    @default("Đang tìm kiếm")
+  
   @@index([khachHangId], map: "MaKH")
   @@map("NhuCau")
 }
@@ -92,17 +96,14 @@ model BatDongSan {
 
   // Khóa ngoại mặc định
   @@index([khachHangId], map: "MaKH")
-  
   // TỐI ƯU HIỆU NĂNG: Đánh chỉ mục đơn bám sát 5 tiêu chí tìm kiếm thực tế
   @@index([loaiBDS], map: "Idx_LoaiBDS")
   @@index([viTri], map: "Idx_ViTri")
   @@index([diaChi], map: "Idx_DiaChi")
   @@index([giaTien], map: "Idx_GiaTien")
   @@index([huong], map: "Idx_Huong")
-
   // TỐI ƯU HIỆU NĂNG: Đánh chỉ mục kết hợp (Composite) cho trường hợp khách hàng lọc nhiều điều kiện cùng lúc (VD: Tìm Căn hộ + ở Quận 1 + Giá < 3 tỷ)
   @@index([loaiBDS, viTri, giaTien], map: "Idx_BoLoc_Loai_ViTri_Gia")
-
   @@map("batdongsan")
 }
 
@@ -124,11 +125,11 @@ model ChiTietBDS {
 }
 
 model HinhAnhBDS {
-  id             Int        @id @default(autoincrement()) @map("MaHinhAnh")
-  batDongSanId   String     @map("MaBDS") @db.VarChar(20)
-  duongDan       String     @map("DuongDan") @db.VarChar(255)
-  anhDaiDien     Boolean?   @default(false) @map("AnhDaiDien")
-  batDongSan     BatDongSan @relation(fields: [batDongSanId], references: [id], onUpdate: Restrict, map: "FK_HINHANH_BDS")
+  id           Int        @id @default(autoincrement()) @map("MaHinhAnh")
+  batDongSanId String     @map("MaBDS") @db.VarChar(20)
+  duongDan     String     @map("DuongDan") @db.VarChar(255)
+  anhDaiDien   Boolean?   @default(false) @map("AnhDaiDien")
+  batDongSan   BatDongSan @relation(fields: [batDongSanId], references: [id], onUpdate: Restrict, map: "FK_HINHANH_BDS")
 
   @@index([batDongSanId], map: "MaBDS")
   @@map("hinhanhbds")
