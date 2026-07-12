@@ -57,6 +57,7 @@ model KhachHang {
 model NhuCau {
   id          String    @id @map("MaNC") @db.VarChar(20)
   khachHangId String    @map("MaKH") @db.VarChar(20)
+  nhanVienId  String?   @map("MaNV") @db.VarChar(5)
   loaiNC      String    @map("LoaiNC") @db.VarChar(50)
   loaiBDS     String    @map("LoaiBDS") @db.VarChar(50)
   viTri       String    @map("ViTri") @db.VarChar(100)
@@ -64,6 +65,7 @@ model NhuCau {
   dienTichMax Float?    @map("DienTichMax") @db.Float
   ghiChu      String?   @map("GhiChu") @db.VarChar(255)
   isDeleted   Boolean?  @default(false) @map("IsDeleted")
+  tinhTrang   String?   @default("Đang tìm kiếm") @map("TinhTrang") @db.VarChar(50)
   khachHang   KhachHang @relation(fields: [khachHangId], references: [id], onUpdate: Restrict, map: "FK_NC_KH")
   nhanVienId  String? // Hoặc Int? tùy thuộc vào kiểu ID của NhanVien
   nhanVien    NhanVien? @relation(fields: [nhanVienId], references: [id])
