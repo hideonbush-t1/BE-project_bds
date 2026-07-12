@@ -67,9 +67,7 @@ model NhuCau {
   isDeleted   Boolean?  @default(false) @map("IsDeleted")
   tinhTrang   String?   @default("Đang tìm kiếm") @map("TinhTrang") @db.VarChar(50)
   khachHang   KhachHang @relation(fields: [khachHangId], references: [id], onUpdate: Restrict, map: "FK_NC_KH")
-  nhanVienId  String? // Hoặc Int? tùy thuộc vào kiểu ID của NhanVien
   nhanVien    NhanVien? @relation(fields: [nhanVienId], references: [id])
-  tinhTrang    String    @default("Đang tìm kiếm")
   
   @@index([khachHangId], map: "MaKH")
   @@map("NhuCau")
